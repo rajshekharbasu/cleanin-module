@@ -123,7 +123,7 @@
                 class="menu-item-text"
                 :class="sidebarToggle ? 'lg:hidden' : ''"
               >
-                Cleaning Crew
+                Vehicle Cleaning
               </span>
             </a>
           </li>
@@ -148,6 +148,26 @@
             </a>
           </li>
           <!-- Menu Item Crew Supervisor -->
+
+          <!-- Menu Item Materials -->
+          <li data-id="materials">
+            <a
+              href="materials.html"
+              @click="sidebarToggle = false; selected = (selected === 'Materials' ? '':'Materials')"
+              class="menu-item group"
+              :class=" (selected === 'Materials') && (page === 'materials') ? 'menu-item-active' : 'menu-item-inactive'"
+            >
+              <i class="ph ph-package text-2xl" :class="(selected === 'Materials') && (page === 'materials') ? 'menu-item-icon-active' : 'menu-item-icon-inactive'"></i>
+
+              <span
+                class="menu-item-text"
+                :class="sidebarToggle ? 'lg:hidden' : ''"
+              >
+                Materials
+              </span>
+            </a>
+          </li>
+          <!-- Menu Item Materials -->
 
           <!-- Menu Item Depot Cleaning -->
           <li data-id="depotcleaning">
