@@ -43,6 +43,22 @@
         { date: 'Jun 7', ago: 3, type: 'Quick Clean', crew: 'Rajesh Kumar (Crew A)', duration: '8 mins', status: 'Approved', photos: ['https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=400'] },
         { date: 'Jun 5', ago: 5, type: 'Quick Clean', crew: 'Vikram Rao (Crew C)', duration: '11 mins', status: 'Approved', photos: [] }
       ],
+      activeQueue: [
+        { ref: 'Bus #821', type: 'Deep Clean', vehicle: 'ICE, Double Decker', bay: 'Bay 12', timer: '04:00:00', rejected: true },
+        { ref: 'Bus #402', type: 'Quick Clean', vehicle: 'EV, Single Decker', bay: 'Bay 4', timer: '09:45', rejected: false },
+        { ref: 'Bus #781', type: 'Overnight Clean', vehicle: 'ICE, Double Decker', bay: 'Bay 2', timer: '02:15:00', rejected: false },
+        { ref: 'Bus #905', type: 'Deep Clean', vehicle: 'EV, Articulated', bay: 'Bay 8', timer: '04:00:00', rejected: false },
+        { ref: 'Bus #301', type: 'Quick Clean', vehicle: 'EV, Single Decker', bay: 'Bay 1', timer: '10:00', rejected: false },
+        { ref: 'Bus #554', type: 'Overnight Clean', vehicle: 'ICE, Double Decker', bay: 'Bay 5', timer: '03:45:00', rejected: false },
+        { ref: 'Bus #882', type: 'Quick Clean', vehicle: 'EV, Single Decker', bay: 'Bay 7', timer: '08:30', rejected: false },
+        { ref: 'Bus #102', type: 'Deep Clean', vehicle: 'ICE, Single Decker', bay: 'Bay 10', timer: '04:30:00', rejected: false },
+        { ref: 'Bus #763', type: 'Quick Clean', vehicle: 'EV, Articulated', bay: 'Bay 12', timer: '12:00', rejected: false },
+        { ref: 'Bus #919', type: 'Overnight Clean', vehicle: 'ICE, Single Decker', bay: 'Bay 15', timer: '02:00:00', rejected: false },
+        { ref: 'Bus #221', type: 'Quick Clean', vehicle: 'EV, Single Decker', bay: 'Bay 16', timer: '05:30', rejected: false },
+        { ref: 'Bus #444', type: 'Deep Clean', vehicle: 'ICE, Double Decker', bay: 'Bay 20', timer: '03:15:00', rejected: false },
+        { ref: 'Bus #650', type: 'Quick Clean', vehicle: 'EV, Single Decker', bay: 'Bay 22', timer: '11:15', rejected: false },
+        { ref: 'Bus #112', type: 'Overnight Clean', vehicle: 'ICE, Single Decker', bay: 'Bay 25', timer: '04:10:00', rejected: false }
+      ],
       openBus(b) { this.activeBus = b; this.detailOpen = true; },
       startSelectedClean() { this.selectedBus = this.activeBus.ref; this.timer = this.activeBus.timer; this.cleaningType = this.activeBus.type; this.detailOpen = false; this.view = 'checklist'; },
     }" x-init="
@@ -73,32 +89,21 @@
       <main>
         <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
 
-          <!-- Navigation Tabs -->
-          <template x-if="view === 'queue'">
-            <div class="mb-6 flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-3">
-              <div class="flex gap-6">
-                <button @click="view = 'queue'" class="pb-3 text-lg font-bold transition-all relative cursor-pointer"
-                  :class="view === 'queue' ? 'text-brand-500 border-b-2 border-brand-500' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'">
-                  Active Cleaning Queue
-                </button>
+          <!-- Queue View -->
+          <div x-show="view === 'queue'" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 md:gap-6">
+            <div class="col-span-1 sm:col-span-2 lg:col-span-2 xl:col-span-3 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 class="text-title-md2 font-bold text-gray-800 dark:text-white/90">Active Queue</h2>
+                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">Select a bus to begin cleaning.</p>
               </div>
-              
               <div class="hidden sm:flex items-center gap-2">
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-50 border border-gray-200 text-gray-500 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400">
                   <i class="ph ph-shield-check text-success-500 mr-1 text-sm"></i> Crew Depot A
                 </span>
               </div>
             </div>
-          </template>
 
-          <!-- Queue View -->
-          <div x-show="view === 'queue'" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:gap-6">
-            <div class="col-span-1 sm:col-span-2 lg:col-span-3 xl:col-span-4">
-              <h2 class="text-title-md2 font-bold text-gray-800 dark:text-white/90">Active Queue</h2>
-              <p class="text-base text-gray-500 dark:text-gray-400 mt-1">Select a bus to begin cleaning.</p>
-            </div>
-
-            <div class="col-span-1 sm:col-span-2 lg:col-span-3 xl:col-span-4 mb-4 overflow-x-auto no-scrollbar pb-2">
+            <div class="col-span-1 sm:col-span-2 lg:col-span-2 xl:col-span-3 mb-4 overflow-x-auto no-scrollbar pb-2">
               <div class="relative flex items-center h-12 w-max rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm px-1">
                 
                 <!-- Gooey Background Layer -->
@@ -123,298 +128,39 @@
                 </div>
               </div>
             </div>
-            <!-- Bus Card: Rejected / Needs Rework -->
-            <div x-show="(filterType === 'All' || filterType === 'Deep Clean') && !fineAccepted" x-data="{ fineAccepted: false }"
-              class="rounded-2xl border-2 border-error-500 bg-white p-6 shadow-sm dark:border-error-600 dark:bg-gray-800">
-              <div class="flex items-start justify-between mb-4">
-                <div
-                  class="flex h-16 w-16 items-center justify-center rounded-2xl bg-error-50 dark:bg-error-500/10 text-3xl font-bold text-error-600">
-                  <i class="ph ph-warning-circle"></i>
+            <!-- Unified Compact Data-Driven Queue -->
+            <template x-for="v in activeQueue.filter(v => filterType === 'All' || filterType === v.type)" :key="v.ref">
+              <button type="button" @click="openBus({ ref: v.ref, type: v.type, timer: v.timer })"
+                class="group block w-full overflow-hidden rounded-xl border border-gray-200 bg-white text-left shadow-sm transition-[transform,border-color,box-shadow] duration-150 hover:shadow-md active:scale-[0.99] dark:border-gray-800 dark:bg-gray-800 p-5 hover:border-brand-500"
+                :class="v.rejected ? 'border-error-400 hover:border-error-500 dark:border-error-600/60' : 'hover:border-brand-500'">
+                <div class="flex items-center justify-between gap-4">
+                  <div class="flex items-center gap-4">
+                    <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl transition-colors"
+                      :class="v.rejected ? 'bg-error-50 text-error-600 dark:bg-error-500/10' : 'bg-gray-100 text-brand-500 dark:bg-gray-700'">
+                      <i class="ph text-3xl" :class="v.rejected ? 'ph-warning-circle' : 'ph-bus'"></i>
+                    </div>
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <h4 class="text-lg font-extrabold text-gray-900 dark:text-white" x-text="v.ref"></h4>
+                        <span class="rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide"
+                          :class="v.rejected ? 'bg-error-500 text-white' : 'bg-brand-50 text-brand-600 border border-brand-100 dark:border-brand-800 dark:bg-brand-500/15 dark:text-brand-500'"
+                          x-text="v.rejected ? 'QA REJECTED' : v.type"></span>
+                      </div>
+                      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1.5" x-text="v.vehicle + ' • Location: ' + v.bay"></p>
+                    </div>
+                  </div>
+                  <div class="shrink-0 text-right">
+                    <span class="flex items-center justify-end gap-1.5 text-base font-bold"
+                      :class="v.rejected ? 'text-error-600 dark:text-error-400' : 'text-gray-600 dark:text-gray-300'">
+                      <i class="ph ph-timer"></i> <span class="tabular-nums" x-text="v.timer"></span>
+                    </span>
+                    <p class="text-xs font-bold uppercase tracking-wide text-gray-400 mt-1.5 flex items-center justify-end gap-1">
+                      Start <i class="ph ph-arrow-right transition-transform duration-150 group-hover:translate-x-0.5"></i>
+                    </p>
+                  </div>
                 </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span
-                    class="rounded-full bg-error-500 px-3 py-1 text-xs font-bold text-white uppercase tracking-wider">
-                    QA REJECTED
-                  </span>
-                  <span
-                    class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-500 uppercase tracking-wider">
-                    Deep Clean
-                  </span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #821</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">ICE, Double Decker <br /> <strong
-                    class="text-gray-700 dark:text-gray-300">Location: Bay 12</strong></p>
-                <div class="mt-4 rounded-xl bg-gray-50 p-4 border border-gray-200 dark:bg-gray-900/50 dark:border-gray-700">
-                  <p class="text-sm font-bold text-error-700 dark:text-error-500 mb-1">Failure Reason:</p>
-                  <p class="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2"><i class="ph ph-trash text-lg text-gray-500"></i> Trash remaining</p>
-                </div>
-              </div>
-              <div class="mt-6 rounded-xl bg-gray-100 p-3.5 text-center dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700">
-                <span class="text-sm font-semibold text-gray-500 dark:text-gray-400 flex items-center justify-center gap-1.5">
-                  <i class="ph ph-clock text-lg animate-pulse text-amber-500"></i> Awaiting Crew Supervisor Action
-                </span>
-              </div>
-            </div>
-
-            <!-- Bus Card: Quick Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Quick Clean'" @click="openBus({ ref:'Bus #402', type:'Quick Clean', timer:'09:45' })\"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-brand-500 hover:border-brand-500 transition-[transform,border-color] duration-150 active:scale-[0.98]">
-              <div class="flex items-start justify-between mb-4">
-                <div
-                  class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-brand-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span
-                    class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-500 uppercase tracking-wider">
-                    Quick Clean
-                  </span>
-                  <span
-                    class="flex items-center gap-1 rounded-full bg-warning-50 py-1 pl-3 pr-3.5 text-base font-bold text-warning-600 dark:bg-warning-500/15 dark:text-warning-500">
-                    <i class="ph ph-timer"></i> 09:45
-                  </span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #402</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">EV, Single Decker <br /> <strong
-                    class="text-gray-700 dark:text-gray-300">Location: Bay 4</strong></p>
-              </div>
-            </div>
-
-            <!-- Bus Card: Overnight Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Overnight Clean'" @click="openBus({ ref:'Bus #781', type:'Overnight Clean', timer:'02:15:00' })\"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-brand-500 hover:border-brand-500 transition-[transform,border-color] duration-150 active:scale-[0.98]">
-              <div class="flex items-start justify-between mb-4">
-                <div
-                  class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-brand-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span
-                    class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-500 uppercase tracking-wider">
-                    Overnight Clean
-                  </span>
-                  <span
-                    class="flex items-center gap-1 rounded-full bg-gray-100 py-1 pl-3 pr-3.5 text-base font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-400">
-                    <i class="ph ph-timer"></i> 02:15:00
-                  </span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #781</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">ICE, Double Decker <br /> <strong
-                    class="text-gray-700 dark:text-gray-300">Location: Bay 2</strong></p>
-              </div>
-            </div>
-
-            <!-- Bus Card: Deep Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Deep Clean'" @click="openBus({ ref:'Bus #905', type:'Deep Clean', timer:'04:00:00' })\"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-brand-500 hover:border-brand-500 transition-[transform,border-color] duration-150 active:scale-[0.98]">
-              <div class="flex items-start justify-between mb-4">
-                <div
-                  class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-brand-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span
-                    class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-500 uppercase tracking-wider">
-                    Deep Clean
-                  </span>
-                  <span
-                    class="flex items-center gap-1 rounded-full bg-gray-100 py-1 pl-3 pr-3.5 text-base font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-400">
-                    <i class="ph ph-timer"></i> 04:00:00
-                  </span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #905</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">EV, Articulated <br /> <strong
-                    class="text-gray-700 dark:text-gray-300">Location: Bay 8</strong></p>
-              </div>
-            </div>
-
-            <!-- Bus Card: Quick Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Quick Clean'" @click="openBus({ ref:'Bus #301', type:'Quick Clean', timer:'10:00' })\"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-brand-500 hover:border-brand-500 transition-[transform,border-color] duration-150 active:scale-[0.98]">
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-brand-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-500 uppercase tracking-wider">Quick Clean</span>
-                  <span class="flex items-center gap-1 rounded-full bg-warning-50 py-1 pl-3 pr-3.5 text-base font-bold text-warning-600 dark:bg-warning-500/15 dark:text-warning-500"><i class="ph ph-timer"></i> 10:00</span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #301</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">EV, Single Decker <br /> <strong class="text-gray-700 dark:text-gray-300">Location: Bay 1</strong></p>
-              </div>
-            </div>
-
-            <!-- Bus Card: Overnight Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Overnight Clean'" @click="openBus({ ref:'Bus #554', type:'Overnight Clean', timer:'03:45:00' })\"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-brand-500 hover:border-brand-500 transition-[transform,border-color] duration-150 active:scale-[0.98]">
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-brand-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-500 uppercase tracking-wider">Overnight Clean</span>
-                  <span class="flex items-center gap-1 rounded-full bg-gray-100 py-1 pl-3 pr-3.5 text-base font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-400"><i class="ph ph-timer"></i> 03:45:00</span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #554</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">ICE, Double Decker <br /> <strong class="text-gray-700 dark:text-gray-300">Location: Bay 5</strong></p>
-              </div>
-            </div>
-
-            <!-- Bus Card: Quick Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Quick Clean'" @click="openBus({ ref:'Bus #882', type:'Quick Clean', timer:'08:30' })\"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-brand-500 hover:border-brand-500 transition-[transform,border-color] duration-150 active:scale-[0.98]">
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-brand-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-500 uppercase tracking-wider">Quick Clean</span>
-                  <span class="flex items-center gap-1 rounded-full bg-warning-50 py-1 pl-3 pr-3.5 text-base font-bold text-warning-600 dark:bg-warning-500/15 dark:text-warning-500"><i class="ph ph-timer"></i> 08:30</span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #882</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">EV, Single Decker <br /> <strong class="text-gray-700 dark:text-gray-300">Location: Bay 7</strong></p>
-              </div>
-            </div>
-
-            <!-- Bus Card: Deep Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Deep Clean'" @click="openBus({ ref:'Bus #102', type:'Deep Clean', timer:'04:30:00' })\"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-brand-500 hover:border-brand-500 transition-[transform,border-color] duration-150 active:scale-[0.98]">
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-brand-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-500 uppercase tracking-wider">Deep Clean</span>
-                  <span class="flex items-center gap-1 rounded-full bg-gray-100 py-1 pl-3 pr-3.5 text-base font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-400"><i class="ph ph-timer"></i> 04:30:00</span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #102</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">ICE, Single Decker <br /> <strong class="text-gray-700 dark:text-gray-300">Location: Bay 10</strong></p>
-              </div>
-            </div>
-
-            <!-- Bus Card: Quick Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Quick Clean'" @click="openBus({ ref:'Bus #763', type:'Quick Clean', timer:'12:00' })\"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-brand-500 hover:border-brand-500 transition-[transform,border-color] duration-150 active:scale-[0.98]">
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-brand-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-500 uppercase tracking-wider">Quick Clean</span>
-                  <span class="flex items-center gap-1 rounded-full bg-gray-100 py-1 pl-3 pr-3.5 text-base font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-400"><i class="ph ph-timer"></i> 12:00</span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #763</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">EV, Articulated <br /> <strong class="text-gray-700 dark:text-gray-300">Location: Bay 12</strong></p>
-              </div>
-            </div>
-
-            <!-- Bus Card: Overnight Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Overnight Clean'" @click="openBus({ ref:'Bus #919', type:'Overnight Clean', timer:'02:00:00' })\"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-brand-500 hover:border-brand-500 transition-[transform,border-color] duration-150 active:scale-[0.98]">
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-brand-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-500 uppercase tracking-wider">Overnight Clean</span>
-                  <span class="flex items-center gap-1 rounded-full bg-warning-50 py-1 pl-3 pr-3.5 text-base font-bold text-warning-600 dark:bg-warning-500/15 dark:text-warning-500"><i class="ph ph-timer"></i> 02:00:00</span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #919</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">ICE, Single Decker <br /> <strong class="text-gray-700 dark:text-gray-300">Location: Bay 15</strong></p>
-              </div>
-            </div>
-
-            <!-- Bus Card: Quick Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Quick Clean'" @click="openBus({ ref:'Bus #221', type:'Quick Clean', timer:'05:30' })\"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-brand-500 hover:border-brand-500 transition-[transform,border-color] duration-150 active:scale-[0.98]">
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-brand-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-500 uppercase tracking-wider">Quick Clean</span>
-                  <span class="flex items-center gap-1 rounded-full bg-error-50 py-1 pl-3 pr-3.5 text-base font-bold text-error-600 dark:bg-error-500/15 dark:text-error-500"><i class="ph ph-timer"></i> 05:30</span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #221</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">EV, Single Decker <br /> <strong class="text-gray-700 dark:text-gray-300">Location: Bay 16</strong></p>
-              </div>
-            </div>
-
-            <!-- Bus Card: Deep Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Deep Clean'" @click="openBus({ ref:'Bus #444', type:'Deep Clean', timer:'03:15:00' })\"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-brand-500 hover:border-brand-500 transition-[transform,border-color] duration-150 active:scale-[0.98]">
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-brand-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-500 uppercase tracking-wider">Deep Clean</span>
-                  <span class="flex items-center gap-1 rounded-full bg-gray-100 py-1 pl-3 pr-3.5 text-base font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-400"><i class="ph ph-timer"></i> 03:15:00</span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #444</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">ICE, Double Decker <br /> <strong class="text-gray-700 dark:text-gray-300">Location: Bay 20</strong></p>
-              </div>
-            </div>
-
-            <!-- Bus Card: Quick Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Quick Clean'" @click="openBus({ ref:'Bus #650', type:'Quick Clean', timer:'11:15' })\"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-brand-500 hover:border-brand-500 transition-[transform,border-color] duration-150 active:scale-[0.98]">
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-brand-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-500 uppercase tracking-wider">Quick Clean</span>
-                  <span class="flex items-center gap-1 rounded-full bg-gray-100 py-1 pl-3 pr-3.5 text-base font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-400"><i class="ph ph-timer"></i> 11:15</span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #650</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">EV, Single Decker <br /> <strong class="text-gray-700 dark:text-gray-300">Location: Bay 22</strong></p>
-              </div>
-            </div>
-
-            <!-- Bus Card: Overnight Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Overnight Clean'" @click="openBus({ ref:'Bus #112', type:'Overnight Clean', timer:'04:10:00' })\"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-brand-500 hover:border-brand-500 transition-[transform,border-color] duration-150 active:scale-[0.98]">
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-brand-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-500 uppercase tracking-wider">Overnight Clean</span>
-                  <span class="flex items-center gap-1 rounded-full bg-gray-100 py-1 pl-3 pr-3.5 text-base font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-400"><i class="ph ph-timer"></i> 04:10:00</span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #112</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">ICE, Single Decker <br /> <strong class="text-gray-700 dark:text-gray-300">Location: Bay 25</strong></p>
-              </div>
-            </div>
+              </button>
+            </template>
           </div>
 
           <!-- Checklist View -->
@@ -826,24 +572,38 @@
       <!-- History list -->
       <div class="flex-1 space-y-3 overflow-y-auto px-6 py-4">
         <template x-for="(h, i) in cleanHistory.filter(h => h.ago < historyDays)" :key="i">
-          <div class="rounded-2xl border border-gray-150 bg-gray-50/60 p-4 dark:border-gray-800 dark:bg-gray-800/40">
-            <div class="flex items-center justify-between gap-3">
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-bold text-gray-800 dark:text-white" x-text="h.date"></span>
-                <span class="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-brand-600 dark:bg-brand-500/15 dark:text-brand-500" x-text="h.type"></span>
+          <div class="rounded-xl border bg-white p-4 shadow-sm transition-[transform,border-color,box-shadow] duration-150 hover:shadow-md dark:bg-gray-800"
+            :class="h.status === 'Approved' ? 'border-success-200 dark:border-success-900/50' : 'border-error-200 dark:border-error-900/50'">
+            <div class="flex items-center justify-between mb-3 border-b border-gray-100 dark:border-gray-700 pb-3">
+              <div class="flex items-center gap-3">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors"
+                  :class="h.status === 'Approved' ? 'bg-success-50 text-success-600 dark:bg-success-500/10' : 'bg-error-50 text-error-600 dark:bg-error-500/10'">
+                  <i class="ph text-2xl" :class="h.status === 'Approved' ? 'ph-check-circle' : 'ph-x-circle'"></i>
+                </div>
+                <div>
+                  <h4 class="text-md font-extrabold text-gray-900 dark:text-white" x-text="h.date"></h4>
+                  <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-1 block">
+                    <span x-text="h.type"></span>
+                  </span>
+                </div>
               </div>
-              <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
-                :class="h.status === 'Approved' ? 'bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-400' : 'bg-error-50 text-error-700 dark:bg-error-500/15 dark:text-error-400'"
+              <span class="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide"
+                :class="h.status === 'Approved' ? 'bg-success-50 text-success-700 dark:bg-success-500/20 dark:text-success-400' : 'bg-error-50 text-error-700 dark:bg-error-500/20 dark:text-error-400'"
                 x-text="h.status"></span>
             </div>
-            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400"><span x-text="h.crew"></span> • <span class="tabular-nums" x-text="h.duration"></span></p>
-            <div class="mt-3 flex flex-wrap gap-2" x-show="h.photos.length">
+
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5"><i class="ph ph-user text-gray-400"></i><span x-text="h.crew"></span></span>
+              <span class="text-xs font-semibold text-gray-400 tabular-nums"><i class="ph ph-clock text-gray-400"></i> <span x-text="h.duration"></span></span>
+            </div>
+
+            <div class="mt-2 flex flex-wrap gap-2" x-show="h.photos.length">
               <template x-for="img in h.photos" :key="img">
                 <img :src="img" alt="Cleaning verification photo" loading="lazy"
-                  class="h-16 w-16 cursor-zoom-in rounded-lg object-cover outline outline-1 -outline-offset-1 outline-black/10 transition-transform duration-150 hover:scale-105 dark:outline-white/10" />
+                  class="h-14 w-14 cursor-zoom-in rounded-lg object-cover outline outline-1 -outline-offset-1 outline-black/10 transition-transform duration-150 hover:scale-105 dark:outline-white/10" />
               </template>
             </div>
-            <p class="mt-2 text-xs italic text-gray-400" x-show="!h.photos.length">No photos uploaded.</p>
+            <p class="mt-2 text-[10px] uppercase font-bold text-gray-400" x-show="!h.photos.length">No photos uploaded</p>
           </div>
         </template>
         <p class="py-8 text-center text-sm text-gray-400" x-show="cleanHistory.filter(h => h.ago < historyDays).length === 0">No cleans recorded in this timeframe.</p>

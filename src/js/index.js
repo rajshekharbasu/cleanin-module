@@ -3,6 +3,10 @@ import "flatpickr/dist/flatpickr.min.css";
 import "dropzone/dist/dropzone.css";
 import "../css/style.css";
 
+import React from "react";
+import { createRoot } from "react-dom/client";
+import { Agentation } from "agentation";
+
 import Alpine from "alpinejs";
 import persist from "@alpinejs/persist";
 import flatpickr from "flatpickr";
@@ -116,3 +120,21 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 });
+
+// Init Agentation Feedback Widget
+document.addEventListener("DOMContentLoaded", () => {
+  const container = document.createElement("div");
+  container.id = "agentation-root";
+  document.body.appendChild(container);
+
+  const root = createRoot(container);
+  root.render(
+    React.createElement(Agentation, {
+      endpoint: "http://localhost:4747",
+      onSessionCreated: (sessionId) => {
+        console.log("Session started:", sessionId);
+      },
+    })
+  );
+});
+

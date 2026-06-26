@@ -141,7 +141,10 @@
                 { ref: 'Bus #102', type: 'Quick Clean', vehicle: 'EV, Single Decker', cleanedBy: 'Sarah M.', sla: '08m 15s', slaOk: true, photoCount: 4, tone: 'success', statusLabel: 'Ready for QA', bay: 'Bay 12' },
                 { ref: 'Bus #821', type: 'Deep Clean', vehicle: 'ICE, Double Decker', cleanedBy: 'John D.', sla: '02h 10m', slaOk: true, photoCount: 12, tone: 'priority', statusLabel: 'Priority Review', bay: 'Bay 4' },
                 { ref: 'Bus #305', type: 'Quick Clean', vehicle: 'EV, Single Decker', cleanedBy: 'Mike R.', sla: '14m 20s', slaOk: false, photoCount: 2, tone: 'error', statusLabel: 'SLA Breached', bay: 'Bay 7' },
-                { ref: 'Bus #150', type: 'Overnight Clean', vehicle: 'ICE, Articulated', cleanedBy: 'Team Beta', sla: '45m 00s', slaOk: true, photoCount: 8, tone: 'warning', statusLabel: 'Needs Verification', bay: 'Bay 1' }
+                { ref: 'Bus #150', type: 'Overnight Clean', vehicle: 'ICE, Articulated', cleanedBy: 'Team Beta', sla: '45m 00s', slaOk: true, photoCount: 8, tone: 'warning', statusLabel: 'Needs Verification', bay: 'Bay 1' },
+                { ref: 'Bus #210', type: 'Quick Clean', vehicle: 'EV, Single Decker', cleanedBy: 'Vikram Rao', sla: '10m 30s', slaOk: true, photoCount: 5, tone: 'success', statusLabel: 'Ready for QA', bay: 'Bay 3' },
+                { ref: 'Bus #502', type: 'Deep Clean', vehicle: 'ICE, Single Decker', cleanedBy: 'Amit Singh', sla: '03h 45m', slaOk: true, photoCount: 15, tone: 'priority', statusLabel: 'Priority Review', bay: 'Bay 18' },
+                { ref: 'Bus #788', type: 'Overnight Clean', vehicle: 'EV, Articulated', cleanedBy: 'Team Alpha', sla: '50m 10s', slaOk: true, photoCount: 6, tone: 'warning', statusLabel: 'Needs Verification', bay: 'Bay 9' }
               ],
               reviewedBuses: [],
               reviewModalOpen: false,
@@ -239,44 +242,38 @@
               <div class="grid grid-cols-1 gap-6">
 
                 <!-- Column 1: Action Required (Ready for QA + Rejected) -->
-                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-                  <h3 class="xl:col-span-2 text-lg font-bold text-gray-800 dark:text-white/90">Action Required</h3>
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+                  <h3 class="xl:col-span-3 text-lg font-bold text-gray-800 dark:text-white/90">Action Required</h3>
 
                   <!-- QA review cards (data-driven; click a card to open the review modal) -->
                   <template x-for="v in qaQueue.filter(v => (filterType === 'All' || filterType === v.type) && !reviewedBuses.includes(v.ref))" :key="v.ref">
                     <button type="button" @click="openReview(v)"
-                      class="group block w-full overflow-hidden rounded-2xl border-2 bg-white text-left shadow-sm transition-[transform,border-color,box-shadow] duration-150 hover:shadow-md active:scale-[0.99] dark:bg-gray-800"
-                      :class="v.tone === 'error' ? 'border-error-300 hover:border-error-500 dark:border-error-600/60' : (v.tone === 'priority' ? 'border-purple-300 hover:border-purple-500 dark:border-purple-600/60' : 'border-warning-300 hover:border-warning-500 dark:border-warning-600/60')">
-                      <div class="flex items-center justify-between px-4 py-2.5 text-xs font-bold"
-                        :class="v.tone === 'error' ? 'bg-error-50 text-error-700 dark:bg-error-500/10 dark:text-error-400' : (v.tone === 'priority' ? 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400' : 'bg-warning-50 text-warning-700 dark:bg-warning-500/10 dark:text-warning-400')">
-                        <span class="flex items-center gap-1.5">
-                          <i class="ph" :class="v.tone === 'error' ? 'ph-warning-circle' : (v.tone === 'priority' ? 'ph-pulse' : 'ph-clipboard-text')"></i>
-                          <span x-text="v.statusLabel"></span>
-                        </span>
-                        <span x-text="v.bay"></span>
-                      </div>
-                      <div class="p-5">
-                        <div class="flex items-start justify-between gap-3">
-                          <div>
-                            <div class="flex flex-wrap items-center gap-2">
-                              <h4 class="text-xl font-black text-gray-900 dark:text-white" x-text="v.ref"></h4>
-                              <span class="rounded-full border border-brand-100 bg-brand-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-brand-600 dark:border-brand-800 dark:bg-brand-500/15 dark:text-brand-500" x-text="v.type"></span>
-                            </div>
-                            <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400" x-text="v.vehicle"></p>
+                      class="group block w-full overflow-hidden rounded-xl border border-gray-200 bg-white text-left shadow-sm transition-[transform,border-color,box-shadow] duration-150 hover:shadow-md active:scale-[0.99] dark:border-gray-800 dark:bg-gray-800 p-5"
+                      :class="v.tone === 'error' ? 'hover:border-error-500 border-error-400 dark:border-error-600/60' : (v.tone === 'priority' ? 'hover:border-purple-500 border-purple-400 dark:border-purple-600/60' : 'hover:border-brand-500')">
+                      <div class="flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                          <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl transition-colors"
+                            :class="v.tone === 'error' ? 'bg-error-50 text-error-600 dark:bg-error-500/10' : (v.tone === 'priority' ? 'bg-purple-50 text-purple-600 dark:bg-purple-500/10' : 'bg-warning-50 text-warning-600 dark:bg-warning-500/10')">
+                            <i class="ph text-3xl" :class="v.tone === 'error' ? 'ph-warning-circle' : (v.tone === 'priority' ? 'ph-pulse' : 'ph-clipboard-text')"></i>
                           </div>
-                          <div class="shrink-0 text-right">
-                            <p class="text-[11px] font-bold uppercase tracking-wide text-gray-400">Cleaned by</p>
-                            <p class="text-xs text-gray-600 dark:text-gray-300" x-text="v.cleanedBy"></p>
+                          <div>
+                            <div class="flex items-center gap-2">
+                              <h4 class="text-lg font-extrabold text-gray-900 dark:text-white" x-text="v.ref"></h4>
+                              <span class="rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide"
+                                :class="v.tone === 'error' ? 'bg-error-50 text-error-700 dark:bg-error-500/10 dark:text-error-400' : (v.tone === 'priority' ? 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400' : 'bg-warning-50 text-warning-700 dark:bg-warning-500/10 dark:text-warning-400')"
+                                x-text="v.statusLabel"></span>
+                            </div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1.5" x-text="v.vehicle + ' • ' + v.bay + ' • By ' + v.cleanedBy"></p>
                           </div>
                         </div>
-                        <div class="mt-4 flex items-center justify-between border-t border-gray-100 pt-3 dark:border-gray-700/60">
-                          <span class="flex items-center gap-1.5 text-xs font-semibold" :class="v.slaOk ? 'text-gray-500 dark:text-gray-400' : 'text-error-600 dark:text-error-400'">
+                        <div class="shrink-0 text-right">
+                          <span class="flex items-center justify-end gap-1.5 text-base font-bold"
+                            :class="v.slaOk ? 'text-gray-600 dark:text-gray-300' : 'text-error-600 dark:text-error-400'">
                             <i class="ph ph-timer"></i> <span class="tabular-nums" x-text="v.sla"></span>
                           </span>
-                          <span class="flex items-center gap-1.5 text-xs font-bold text-brand-600 dark:text-brand-400">
-                            <i class="ph ph-image"></i> <span x-text="v.photoCount + ' photos'"></span>
-                            <i class="ph ph-arrow-right transition-transform duration-150 group-hover:translate-x-0.5"></i>
-                          </span>
+                          <p class="text-xs font-bold uppercase tracking-wide text-gray-400 mt-1.5 flex items-center justify-end gap-1">
+                            <i class="ph ph-image text-brand-500"></i> <span x-text="v.photoCount + ' photos'"></span>
+                          </p>
                         </div>
                       </div>
                     </button>
@@ -363,6 +360,37 @@
               const stored = localStorage.getItem('depot_cleaning_submissions');
               if (stored) {
                 this.depotSubmissions = JSON.parse(stored);
+              } else {
+                this.depotSubmissions = [
+                  {
+                    id: 'D-802',
+                    day: 'Wednesday',
+                    date: 'Oct 25',
+                    submittedAt: '06:30 AM',
+                    status: 'Pending',
+                    completedTasks: 12,
+                    totalTasks: 12,
+                    isIncomplete: false,
+                    reasons: [],
+                    customProblem: '',
+                    photos: {
+                      'Floor & Pathways': ['https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=400']
+                    }
+                  },
+                  {
+                    id: 'D-805',
+                    day: 'Wednesday',
+                    date: 'Oct 25',
+                    submittedAt: '07:15 AM',
+                    status: 'Pending',
+                    completedTasks: 8,
+                    totalTasks: 10,
+                    isIncomplete: true,
+                    reasons: ['Oil Spill Not Cleared'],
+                    customProblem: '',
+                    photos: {}
+                  }
+                ];
               }
             },
             approveDepot(subId) {
@@ -398,15 +426,27 @@
             <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Depot Cleaning QA Queue</h3>
 
             <!-- Queue Cards -->
-            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
               <template x-for="sub in depotSubmissions.filter(s => s.status === 'Pending')" :key="sub.id">
-                <div class="rounded-2xl border border-warning-200 bg-white p-6 shadow-sm dark:border-warning-900/30 dark:bg-gray-800">
-                  <div class="flex items-start justify-between gap-4 flex-col md:flex-row border-b border-gray-100 dark:border-gray-700 pb-4 mb-4">
-                    <div>
-                      <h4 class="text-lg font-bold text-gray-900 dark:text-white" x-text="sub.day + ', ' + sub.date"></h4>
-                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Submitted at <span x-text="sub.submittedAt"></span> • ID: <span x-text="sub.id" class="font-bold"></span></p>
+                <div class="rounded-xl border bg-white p-5 shadow-sm transition-[transform,border-color,box-shadow] duration-150 hover:shadow-md dark:bg-gray-800"
+                  :class="sub.isIncomplete ? 'border-error-200 dark:border-error-800' : 'border-warning-200 dark:border-warning-900/50'">
+                  <div class="flex items-center justify-between mb-4 border-b border-gray-100 dark:border-gray-700 pb-4">
+                    <div class="flex items-center gap-4">
+                      <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl transition-colors"
+                        :class="sub.isIncomplete ? 'bg-error-50 text-error-600 dark:bg-error-500/10' : 'bg-warning-50 text-warning-600 dark:bg-warning-500/10'">
+                        <i class="ph text-3xl" :class="sub.isIncomplete ? 'ph-warning-circle' : 'ph-warehouse'"></i>
+                      </div>
+                      <div>
+                        <h4 class="text-lg font-extrabold text-gray-900 dark:text-white" x-text="sub.day + ', ' + sub.date"></h4>
+                        <span class="text-sm font-semibold text-gray-500 dark:text-gray-400 mt-1.5 block">
+                          Submitted at <span x-text="sub.submittedAt"></span> • ID: <span x-text="sub.id"></span>
+                        </span>
+                      </div>
                     </div>
-                    <span class="rounded-full bg-warning-100 px-3 py-1 text-xs font-bold text-warning-800 dark:bg-warning-500/20 dark:text-warning-400 uppercase">Pending Review</span>
+                    <span class="rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide"
+                      :class="sub.isIncomplete ? 'bg-error-50 text-error-700 dark:bg-error-500/20 dark:text-error-400' : 'bg-warning-100 text-warning-800 dark:bg-warning-500/20 dark:text-warning-400'">
+                      Pending Review
+                    </span>
                   </div>
 
                   <div class="space-y-4">

@@ -444,18 +444,29 @@
             </div>
 
             <!-- List of Submissions -->
-            <div class="grid grid-cols-1 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               <template x-for="sub in submissions.filter(s => {
                 const diffDays = Math.ceil(Math.abs(new Date() - new Date(s.date)) / (1000 * 60 * 60 * 24));
                 return diffDays <= timeframe;
               })" :key="sub.id">
-                <div class="rounded-2xl border p-6 bg-white dark:bg-gray-900 shadow-sm flex flex-col md:flex-row md:items-start justify-between gap-6"
-                  :class="sub.status === 'Approved' ? 'border-success-200 dark:border-success-500/20' : sub.status === 'Rejected' ? 'border-error-200 dark:border-error-500/20' : 'border-warning-200 dark:border-warning-500/20'">
+                <div class="rounded-xl border bg-white p-5 shadow-sm transition-[transform,border-color,box-shadow] duration-150 hover:shadow-md dark:bg-gray-800"
+                  :class="sub.status === 'Approved' ? 'border-success-200 dark:border-success-900/50' : sub.status === 'Rejected' ? 'border-error-200 dark:border-error-900/50' : 'border-warning-200 dark:border-warning-900/50'">
                   <div class="space-y-4 flex-1">
-                    <div class="flex items-center gap-3">
-                      <h4 class="text-lg font-bold text-gray-900 dark:text-white" x-text="sub.day + ', ' + sub.date"></h4>
-                      <span class="rounded px-2.5 py-0.5 text-xs font-bold uppercase"
-                        :class="sub.status === 'Approved' ? 'bg-success-100 text-success-800 dark:bg-success-500/20 dark:text-success-400' : sub.status === 'Rejected' ? 'bg-error-100 text-error-800 dark:bg-error-500/20 dark:text-error-400' : 'bg-warning-100 text-warning-800 dark:bg-warning-500/20 dark:text-warning-400'"
+                    <div class="flex items-center justify-between mb-2 border-b border-gray-100 dark:border-gray-700 pb-4">
+                      <div class="flex items-center gap-4">
+                        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl transition-colors"
+                          :class="sub.status === 'Approved' ? 'bg-success-50 text-success-600 dark:bg-success-500/10' : sub.status === 'Rejected' ? 'bg-error-50 text-error-600 dark:bg-error-500/10' : 'bg-warning-50 text-warning-600 dark:bg-warning-500/10'">
+                          <i class="ph text-3xl" :class="sub.status === 'Approved' ? 'ph-check-circle' : sub.status === 'Rejected' ? 'ph-x-circle' : 'ph-warehouse'"></i>
+                        </div>
+                        <div>
+                          <h4 class="text-lg font-extrabold text-gray-900 dark:text-white" x-text="sub.day + ', ' + sub.date"></h4>
+                          <span class="text-sm font-semibold text-gray-500 dark:text-gray-400 mt-1.5 block">
+                            ID: <span x-text="sub.id"></span>
+                          </span>
+                        </div>
+                      </div>
+                      <span class="rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide"
+                        :class="sub.status === 'Approved' ? 'bg-success-50 text-success-700 dark:bg-success-500/20 dark:text-success-400' : sub.status === 'Rejected' ? 'bg-error-50 text-error-700 dark:bg-error-500/20 dark:text-error-400' : 'bg-warning-100 text-warning-800 dark:bg-warning-500/20 dark:text-warning-400'"
                         x-text="sub.status"></span>
                     </div>
 
