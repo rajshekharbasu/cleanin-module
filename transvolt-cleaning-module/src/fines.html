@@ -50,6 +50,12 @@
         if (fine) fine.status = 'Appealed';
         if (this.activeFine && this.activeFine.id === id) this.activeFine.status = 'Appealed';
       },
+      transferFine(id) {
+        const fine = this.finesData.find(f => f.id === id);
+        if (fine) fine.status = 'Transferred';
+        if (this.activeFine && this.activeFine.id === id) this.activeFine.status = 'Transferred';
+        alert(`Fine ${id} has been transferred to Vendor successfully.`);
+      },
       addFine() {
         if (!this.newFine.ref || !this.newFine.amount) return;
         const newId = 'F-' + (100 + this.finesData.length + 1);
@@ -190,6 +196,7 @@
                   <option value="Pending">Pending</option>
                   <option value="Paid">Paid</option>
                   <option value="Appealed">Appealed</option>
+                  <option value="Transferred">Transferred</option>
                 </select>
                 <select x-model="filterType" class="block rounded-lg border border-gray-300 bg-gray-50 p-2 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white min-w-32">
                   <option value="All">All Types</option>
@@ -241,7 +248,8 @@
                               :class="{
                                 'bg-success-50 text-success-700 border-success-200 dark:bg-success-500/10 dark:text-success-400 dark:border-success-500/20': fine.status === 'Paid',
                                 'bg-warning-50 text-warning-700 border-warning-200 dark:bg-warning-500/10 dark:text-warning-400 dark:border-warning-500/20': fine.status === 'Pending',
-                                'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20': fine.status === 'Appealed'
+                                'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20': fine.status === 'Appealed',
+                                'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20': fine.status === 'Transferred'
                               }"
                               x-text="fine.status"></span>
                       </td>
@@ -406,17 +414,23 @@
                   :class="{
                     'bg-success-50 text-success-700 border-success-200 dark:bg-success-500/10 dark:text-success-400 dark:border-success-500/20': activeFine.status === 'Paid',
                     'bg-warning-50 text-warning-700 border-warning-200 dark:bg-warning-500/10 dark:text-warning-400 dark:border-warning-500/20': activeFine.status === 'Pending',
-                    'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20': activeFine.status === 'Appealed'
+                    'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20': activeFine.status === 'Appealed',
+                    'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20': activeFine.status === 'Transferred'
                   }"
                   x-text="activeFine.status"></span>
           </div>
           
-          <div x-show="activeFine.status === 'Pending'" class="mt-8 flex gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <button @click="appealFine(activeFine.id)" class="flex-1 rounded-xl border border-warning-200 bg-warning-50 py-3 font-bold text-warning-700 hover:bg-warning-100 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-500 dark:hover:bg-warning-500/20 transition-colors">
-              <i class="ph ph-flag mr-1"></i> Appeal
-            </button>
-            <button @click="payFine(activeFine.id)" class="flex-1 rounded-xl bg-success-500 py-3 font-bold text-white hover:bg-success-600 transition-colors shadow-sm">
-              <i class="ph ph-check-circle mr-1"></i> Pay Now
+          <div x-show="activeFine.status === 'Pending'" class="mt-8 flex flex-col gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex gap-3">
+              <button @click="appealFine(activeFine.id)" class="flex-1 rounded-xl border border-warning-200 bg-warning-50 py-3 font-bold text-warning-700 hover:bg-warning-100 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-500 dark:hover:bg-warning-500/20 transition-colors">
+                <i class="ph ph-flag mr-1"></i> Appeal
+              </button>
+              <button @click="payFine(activeFine.id)" class="flex-1 rounded-xl bg-success-500 py-3 font-bold text-white hover:bg-success-600 transition-colors shadow-sm">
+                <i class="ph ph-check-circle mr-1"></i> Pay Now
+              </button>
+            </div>
+            <button @click="transferFine(activeFine.id)" class="w-full rounded-xl bg-blue-600 py-3 font-bold text-white hover:bg-blue-700 transition-colors shadow-sm flex items-center justify-center gap-1.5">
+              <i class="ph ph-arrow-square-out text-lg"></i> Transfer to Vendor
             </button>
           </div>
         </div>

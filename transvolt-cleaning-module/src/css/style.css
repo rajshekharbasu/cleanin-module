@@ -273,6 +273,8 @@ layer(base);
 @layer base {
   body {
     @apply font-outfit relative z-1 bg-gray-50 text-base font-normal;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 

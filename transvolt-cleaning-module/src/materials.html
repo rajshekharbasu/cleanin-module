@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>
+    Materials | TransVolt
+  </title>
+  <!-- Phosphor Icons for large, accessible iconography -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+</head>
+
+<body x-data="{
+      page: 'materials',
+      loaded: true,
+      darkMode: false,
+      stickyMenu: false,
+      sidebarToggle: false,
+      scrollTop: false,
+
+      // Materials Tracker State
+      materialSearchQuery: '',
+      materialDateFilter: '2026-06-10',
+      materialLogs: [
+        { date: '2026-06-10', material: 'Disinfectant Liquid', consumed: '12L', loggedBy: 'Suresh Patil (Crew A)', category: 'Daily Consumed' },
+        { date: '2026-06-10', material: 'Microfiber Cloths', consumed: '15 units', loggedBy: 'Amit Singh (Crew B)', category: 'Daily Consumed' },
+        { date: '2026-06-10', material: 'Detergent Soap', consumed: '8L', loggedBy: 'Rajesh Kumar (Crew A)', category: 'Daily Consumed' },
+        { date: '2026-06-09', material: 'Disinfectant Liquid', consumed: '15L', loggedBy: 'Suresh Patil (Crew A)', category: 'Daily Consumed' },
+        { date: '2026-06-09', material: 'Trash Bags (Heavy Duty)', consumed: '30 units', loggedBy: 'Vikram Rao (Crew C)', category: 'Daily Consumed' },
+        { date: '2026-06-09', material: 'Seat Shampoo', consumed: '5L', loggedBy: 'Amit Singh (Crew B)', category: 'Daily Consumed' }
+      ],
+      inventory: [
+        { material: 'Disinfectant Liquid', stock: '85L', unit: 'L' },
+        { material: 'Detergent Soap', stock: '60L', unit: 'L' },
+        { material: 'Microfiber Cloths', stock: '120 units', unit: 'units' },
+        { material: 'Trash Bags (Heavy Duty)', stock: '240 units', unit: 'units' },
+        { material: 'Seat Shampoo', stock: '45L', unit: 'L' }
+      ],
+      eodInput: {
+        disinfectant: '',
+        detergent: '',
+        cloths: '',
+        trashBags: '',
+        shampoo: ''
+      },
+      submitEOD() {
+        if (!this.eodInput.disinfectant && !this.eodInput.detergent && !this.eodInput.cloths && !this.eodInput.trashBags && !this.eodInput.shampoo) {
+          alert('Please enter at least one quantity to submit EOD log.');
+          return;
+        }
+        let date = '2026-06-10';
+        if (this.eodInput.disinfectant) {
+          this.materialLogs.unshift({ date: date, material: 'Disinfectant Liquid', consumed: this.eodInput.disinfectant + 'L', loggedBy: 'Supervisor (EOD Log)', category: 'EOD Consumed' });
+          let item = this.inventory.find(i => i.material === 'Disinfectant Liquid');
+          if (item) item.stock = (parseInt(item.stock) - parseInt(this.eodInput.disinfectant)) + 'L';
+        }
+        if (this.eodInput.detergent) {
+          this.materialLogs.unshift({ date: date, material: 'Detergent Soap', consumed: this.eodInput.detergent + 'L', loggedBy: 'Supervisor (EOD Log)', category: 'EOD Consumed' });
+          let item = this.inventory.find(i => i.material === 'Detergent Soap');
+          if (item) item.stock = (parseInt(item.stock) - parseInt(this.eodInput.detergent)) + 'L';
+        }
+        if (this.eodInput.cloths) {
+          this.materialLogs.unshift({ date: date, material: 'Microfiber Cloths', consumed: this.eodInput.cloths + ' units', loggedBy: 'Supervisor (EOD Log)', category: 'EOD Consumed' });
+          let item = this.inventory.find(i => i.material === 'Microfiber Cloths');
+          if (item) item.stock = (parseInt(item.stock) - parseInt(this.eodInput.cloths)) + ' units';
+        }
+        if (this.eodInput.trashBags) {
+          this.materialLogs.unshift({ date: date, material: 'Trash Bags (Heavy Duty)', consumed: this.eodInput.trashBags + ' units', loggedBy: 'Supervisor (EOD Log)', category: 'EOD Consumed' });
+          let item = this.inventory.find(i => i.material === 'Trash Bags (Heavy Duty)');
+          if (item) item.stock = (parseInt(item.stock) - parseInt(this.eodInput.trashBags)) + ' units';
+        }
+        if (this.eodInput.shampoo) {
+          this.materialLogs.unshift({ date: date, material: 'Seat Shampoo', consumed: this.eodInput.shampoo + 'L', loggedBy: 'Supervisor (EOD Log)', category: 'EOD Consumed' });
+          let item = this.inventory.find(i => i.material === 'Seat Shampoo');
+          if (item) item.stock = (parseInt(item.stock) - parseInt(this.eodInput.shampoo)) + 'L';
+        }
+        this.eodInput = { disinfectant: '', detergent: '', cloths: '', trashBags: '', shampoo: '' };
+        alert('Daily EOD Material consumption report logged successfully and stock inventory levels updated.');
+      }
+    }" x-init="
+         darkMode = JSON.parse(localStorage.getItem('darkMode'));
+         $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)))"
+  :class="{'dark bg-gray-900': darkMode === true}">
+  <!-- ===== Preloader Start ===== -->
+  <include src="./partials/preloader.html"></include>
+  <!-- ===== Preloader End ===== -->
+
+  <!-- ===== Page Wrapper Start ===== -->
+  <div class="flex h-screen overflow-hidden">
+    <!-- ===== Sidebar Start ===== -->
+    <include src="./partials/sidebar.html"></include>
+    <!-- ===== Sidebar End ===== -->
+
+    <!-- ===== Content Area Start ===== -->
+    <div class="relative flex flex-col flex-1 overflow-x-hidden overflow-y-auto">
+      <!-- Small Device Overlay Start -->
+      <include src="./partials/overlay.html" />
+      <!-- Small Device Overlay End -->
+
+      <!-- ===== Header Start ===== -->
+      <include src="./partials/header.html" />
+      <!-- ===== Header End ===== -->
+
+      <!-- ===== Main Content Start ===== -->
+      <main>
+        <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+
+          <!-- Page Heading -->
+          <div class="mb-6 flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-3">
+            <div>
+              <h2 class="text-title-md2 font-bold text-gray-800 dark:text-white/90">Materials</h2>
+              <p class="text-base text-gray-500 dark:text-gray-400 mt-1">Consumption log and depot stock inventory.</p>
+            </div>
+            <div class="hidden sm:flex items-center gap-2">
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-50 border border-gray-200 text-gray-500 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400">
+                <i class="ph ph-shield-check text-success-500 mr-1 text-sm"></i> Crew Depot A
+              </span>
+            </div>
+          </div>
+
+          <!-- Material Tracker -->
+          <div class="space-y-6">
+
+            <!-- Top KPI Inventory Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
+              <template x-for="(item, index) in inventory" :key="item.material">
+                <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900 transition-all hover:shadow-md hover:border-brand-500 group">
+                  <div class="flex items-center gap-4">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors"
+                      :class="index % 5 === 0 ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10' : 
+                              index % 5 === 1 ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10' :
+                              index % 5 === 2 ? 'bg-purple-50 text-purple-600 dark:bg-purple-500/10' :
+                              index % 5 === 3 ? 'bg-amber-50 text-amber-600 dark:bg-amber-500/10' :
+                              'bg-rose-50 text-rose-600 dark:bg-rose-500/10'">
+                      <i class="ph text-2xl group-hover:scale-110 transition-transform" 
+                         :class="item.material.includes('Liquid') || item.material.includes('Soap') || item.material.includes('Shampoo') ? 'ph-drop' : 
+                                 item.material.includes('Cloths') ? 'ph-t-shirt' : 'ph-trash'"></i>
+                    </div>
+                    <div>
+                      <h4 class="text-2xl font-black text-gray-900 dark:text-white" x-text="item.stock"></h4>
+                      <span class="text-[10px] font-bold text-gray-500 dark:text-gray-400 mt-1 block uppercase tracking-wider" x-text="item.material"></span>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              <!-- Left Column: Log and date filtering -->
+              <div class="xl:col-span-2 flex flex-col">
+                <!-- Date filtering and list card -->
+                <div class="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-950 shadow-sm flex-1 flex flex-col">
+                  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                    <div>
+                      <h3 class="text-lg font-bold text-gray-850 dark:text-white">Material Consumption Log</h3>
+                      <p class="text-xs text-gray-500 mt-0.5">Filter by date and view consumed quantities.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                      <select x-model="materialDateFilter" class="rounded-lg border border-gray-300 bg-gray-50 p-2 text-xs text-gray-900 font-bold focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white cursor-pointer">
+                        <option value="2026-06-10">Today (June 10)</option>
+                        <option value="2026-06-09">Yesterday (June 9)</option>
+                      </select>
+                      <div class="relative">
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                          <i class="ph ph-magnifying-glass text-sm"></i>
+                        </div>
+                        <input type="text" x-model="materialSearchQuery" class="rounded-lg border border-gray-300 bg-gray-50 p-2 pl-8 text-xs font-medium text-gray-900 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-900 dark:text-white" placeholder="Search material...">
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="overflow-x-auto flex-1 border border-gray-100 dark:border-gray-800 rounded-xl">
+                    <table class="w-full table-auto text-left">
+                      <thead class="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-800">
+                        <tr>
+                          <th class="px-5 py-4 font-bold text-xs uppercase text-gray-400">Material Name</th>
+                          <th class="px-5 py-4 font-bold text-xs uppercase text-gray-400">Consumed Qty</th>
+                          <th class="px-5 py-4 font-bold text-xs uppercase text-gray-400">Logged By</th>
+                          <th class="px-5 py-4 font-bold text-xs uppercase text-gray-400">Category</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-gray-100 dark:divide-gray-850">
+                        <template x-for="log in materialLogs.filter(l => l.date === materialDateFilter && (materialSearchQuery === '' || l.material.toLowerCase().includes(materialSearchQuery.toLowerCase())))" :key="log.material + log.consumed + log.loggedBy">
+                          <tr class="hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
+                            <td class="px-5 py-4 text-sm font-bold text-gray-850 dark:text-white flex items-center gap-2">
+                              <i class="ph text-lg text-gray-400" :class="log.material.includes('Liquid') || log.material.includes('Soap') || log.material.includes('Shampoo') ? 'ph-drop' : log.material.includes('Cloths') ? 'ph-t-shirt' : 'ph-trash'"></i>
+                              <span x-text="log.material"></span>
+                            </td>
+                            <td class="px-5 py-4 text-sm font-black text-brand-500 dark:text-brand-400 tabular-nums" x-text="log.consumed"></td>
+                            <td class="px-5 py-4 text-sm font-semibold text-gray-600 dark:text-gray-400" x-text="log.loggedBy"></td>
+                            <td class="px-5 py-4 text-xs">
+                              <span class="px-2.5 py-1 rounded-full font-bold uppercase text-[10px] tracking-wide"
+                                :class="log.category === 'EOD Consumed' ? 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20' : 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20'"
+                                x-text="log.category"></span>
+                            </td>
+                          </tr>
+                        </template>
+                        <template x-if="materialLogs.filter(l => l.date === materialDateFilter && (materialSearchQuery === '' || l.material.toLowerCase().includes(materialSearchQuery.toLowerCase()))).length === 0">
+                          <tr>
+                            <td colspan="4" class="px-5 py-12 text-center">
+                              <div class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400 mb-3">
+                                <i class="ph ph-magnifying-glass text-xl"></i>
+                              </div>
+                              <p class="text-sm font-bold text-gray-500">No logs found for selected filter.</p>
+                            </td>
+                          </tr>
+                        </template>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right Column: EOD Log -->
+              <div class="xl:col-span-1">
+                <!-- Daily EOD Submission Form -->
+                <div class="rounded-2xl border-2 border-amber-200 bg-amber-50/40 p-6 dark:border-amber-900/50 dark:bg-amber-500/5 shadow-sm h-full flex flex-col relative overflow-hidden group">
+                  <div class="absolute -right-6 -top-6 text-amber-500/10 dark:text-amber-500/5 transform rotate-12 transition-transform duration-500 group-hover:rotate-6 group-hover:scale-110">
+                    <i class="ph-fill ph-clipboard-text text-9xl"></i>
+                  </div>
+                  
+                  <div class="relative z-10">
+                    <h3 class="text-xl font-black text-amber-800 dark:text-amber-400 mb-2 flex items-center gap-2"><i class="ph-fill ph-calendar-check text-amber-500 text-2xl"></i> End of Day (EOD) Log</h3>
+                    <p class="text-sm text-amber-700/80 dark:text-amber-400/80 mb-6 font-semibold">Record final consumed materials to deduct from the depot warehouse stock.</p>
+
+                    <div class="space-y-5">
+                      <div>
+                        <label class="block text-xs font-extrabold uppercase tracking-wide text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1.5"><i class="ph ph-drop text-amber-600"></i> Disinfectant Liquid (L)</label>
+                        <input type="number" x-model="eodInput.disinfectant" placeholder="e.g. 5" class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-bold text-gray-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white outline-none transition-all">
+                      </div>
+                      <div>
+                        <label class="block text-xs font-extrabold uppercase tracking-wide text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1.5"><i class="ph ph-drop text-amber-600"></i> Detergent Soap (L)</label>
+                        <input type="number" x-model="eodInput.detergent" placeholder="e.g. 4" class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-bold text-gray-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white outline-none transition-all">
+                      </div>
+                      <div>
+                        <label class="block text-xs font-extrabold uppercase tracking-wide text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1.5"><i class="ph ph-t-shirt text-amber-600"></i> Microfiber Cloths</label>
+                        <input type="number" x-model="eodInput.cloths" placeholder="e.g. 10" class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-bold text-gray-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white outline-none transition-all">
+                      </div>
+                      <div>
+                        <label class="block text-xs font-extrabold uppercase tracking-wide text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1.5"><i class="ph ph-trash text-amber-600"></i> Trash Bags</label>
+                        <input type="number" x-model="eodInput.trashBags" placeholder="e.g. 15" class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-bold text-gray-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white outline-none transition-all">
+                      </div>
+                      <div>
+                        <label class="block text-xs font-extrabold uppercase tracking-wide text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1.5"><i class="ph ph-drop text-amber-600"></i> Seat Shampoo (L)</label>
+                        <input type="number" x-model="eodInput.shampoo" placeholder="e.g. 2" class="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-bold text-gray-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-gray-700 dark:bg-gray-900 dark:text-white outline-none transition-all">
+                      </div>
+
+                      <button @click="submitEOD()" class="w-full rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-white font-black py-4 text-sm transition-all shadow-lg hover:shadow-amber-500/25 mt-4 flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="ph-bold ph-check-square text-lg"></i> SUBMIT & DEDUCT STOCK
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+      <!-- ===== Main Content End ===== -->
+    </div>
+    <!-- ===== Content Area End ===== -->
+  </div>
+  <!-- ===== Page Wrapper End ===== -->
+</body>
+
+</html>

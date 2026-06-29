@@ -7,7 +7,7 @@
     content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0" />
   <meta http-equiv="X-UA-Compatible" content="ie=edge" />
   <title>
-    Cleaning Crew Mobile | TransVolt
+    Vehicle Cleaning | TransVolt
   </title>
   <!-- Phosphor Icons for large, accessible iconography -->
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -30,7 +30,38 @@
       darkMode: false, 
       stickyMenu: false, 
       sidebarToggle: false, 
-      scrollTop: false 
+      scrollTop: false,
+
+      // Vehicle detail modal + cleaning history
+      detailOpen: false,
+      historyDays: 3,
+      activeBus: { ref: '', type: '', timer: '' },
+      cleanHistory: [
+        { date: 'Jun 10', ago: 0, type: 'Quick Clean', crew: 'Rajesh Kumar (Crew A)', duration: '9 mins', status: 'Approved', photos: ['https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=400', 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=400'] },
+        { date: 'Jun 9', ago: 1, type: 'Overnight Clean', crew: 'Suresh Patil (Crew A)', duration: '46 mins', status: 'Approved', photos: ['https://images.unsplash.com/photo-1556122071-e404eaedb77f?w=400'] },
+        { date: 'Jun 8', ago: 2, type: 'Deep Clean', crew: 'Amit Singh (Crew B)', duration: '118 mins', status: 'Rejected', photos: ['https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=400', 'https://images.unsplash.com/photo-1581093458791-9d09a5c0a1f9?w=400'] },
+        { date: 'Jun 7', ago: 3, type: 'Quick Clean', crew: 'Rajesh Kumar (Crew A)', duration: '8 mins', status: 'Approved', photos: ['https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=400'] },
+        { date: 'Jun 5', ago: 5, type: 'Quick Clean', crew: 'Vikram Rao (Crew C)', duration: '11 mins', status: 'Approved', photos: [] }
+      ],
+      activeQueue: [
+        { ref: 'Bus #821', type: 'Deep Clean', vehicle: 'ICE, Double Decker', bay: 'Bay 12', timer: '04:00:00', rejected: true },
+        { ref: 'Bus #402', type: 'Quick Clean', vehicle: 'EV, Single Decker', bay: 'Bay 4', timer: '09:45', rejected: false },
+        { ref: 'Bus #781', type: 'Overnight Clean', vehicle: 'ICE, Double Decker', bay: 'Bay 2', timer: '02:15:00', rejected: false },
+        { ref: 'Bus #905', type: 'Deep Clean', vehicle: 'EV, Articulated', bay: 'Bay 8', timer: '04:00:00', rejected: false },
+        { ref: 'Bus #301', type: 'Quick Clean', vehicle: 'EV, Single Decker', bay: 'Bay 1', timer: '10:00', rejected: false },
+        { ref: 'Bus #554', type: 'Overnight Clean', vehicle: 'ICE, Double Decker', bay: 'Bay 5', timer: '03:45:00', rejected: false },
+        { ref: 'Bus #882', type: 'Quick Clean', vehicle: 'EV, Single Decker', bay: 'Bay 7', timer: '08:30', rejected: false },
+        { ref: 'Bus #102', type: 'Deep Clean', vehicle: 'ICE, Single Decker', bay: 'Bay 10', timer: '04:30:00', rejected: false },
+        { ref: 'Bus #763', type: 'Quick Clean', vehicle: 'EV, Articulated', bay: 'Bay 12', timer: '12:00', rejected: false },
+        { ref: 'Bus #919', type: 'Overnight Clean', vehicle: 'ICE, Single Decker', bay: 'Bay 15', timer: '02:00:00', rejected: false },
+        { ref: 'Bus #221', type: 'Quick Clean', vehicle: 'EV, Single Decker', bay: 'Bay 16', timer: '05:30', rejected: false },
+        { ref: 'Bus #444', type: 'Deep Clean', vehicle: 'ICE, Double Decker', bay: 'Bay 20', timer: '03:15:00', rejected: false },
+        { ref: 'Bus #650', type: 'Quick Clean', vehicle: 'EV, Single Decker', bay: 'Bay 22', timer: '11:15', rejected: false },
+        { ref: 'Bus #112', type: 'Overnight Clean', vehicle: 'ICE, Single Decker', bay: 'Bay 25', timer: '04:10:00', rejected: false }
+      ],
+      openBus(b) { this.activeBus = b; this.historyDays = 1; this.detailOpen = true; },
+      startDirectClean(b) { this.activeBus = b; this.startSelectedClean(); },
+      startSelectedClean() { this.selectedBus = this.activeBus.ref; this.timer = this.activeBus.timer; this.cleaningType = this.activeBus.type; this.detailOpen = false; this.view = 'checklist'; },
     }" x-init="
          darkMode = JSON.parse(localStorage.getItem('darkMode'));
          $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)))"
@@ -60,13 +91,20 @@
         <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
 
           <!-- Queue View -->
-          <div x-show="view === 'queue'" class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6">
-            <div class="col-span-1 sm:col-span-2">
-              <h2 class="text-title-md2 font-bold text-gray-800 dark:text-white/90">Active Queue</h2>
-              <p class="text-base text-gray-500 dark:text-gray-400 mt-1">Select a bus to begin cleaning.</p>
+          <div x-show="view === 'queue'" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 md:gap-6">
+            <div class="col-span-1 sm:col-span-2 lg:col-span-2 xl:col-span-3 flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h2 class="text-title-md2 font-bold text-gray-800 dark:text-white/90">Active Queue</h2>
+                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">Select a bus to begin cleaning.</p>
+              </div>
+              <div class="hidden sm:flex items-center gap-2">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-50 border border-gray-200 text-gray-500 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400">
+                  <i class="ph ph-shield-check text-success-500 mr-1 text-sm"></i> Crew Depot A
+                </span>
+              </div>
             </div>
 
-            <div class="col-span-1 sm:col-span-2 mb-4 overflow-x-auto no-scrollbar pb-2">
+            <div class="col-span-1 sm:col-span-2 lg:col-span-2 xl:col-span-3 mb-4 overflow-x-auto no-scrollbar pb-2">
               <div class="relative flex items-center h-12 w-max rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm px-1">
                 
                 <!-- Gooey Background Layer -->
@@ -91,342 +129,47 @@
                 </div>
               </div>
             </div>
-            <!-- Bus Card: Rejected / Needs Rework -->
-            <div x-show="(filterType === 'All' || filterType === 'Deep Clean') && !fineAccepted" x-data="{ fineAccepted: false }"
-              class="rounded-2xl border-2 border-error-500 bg-white p-6 shadow-sm dark:border-error-600 dark:bg-gray-800">
-              <div class="flex items-start justify-between mb-4">
-                <div
-                  class="flex h-16 w-16 items-center justify-center rounded-2xl bg-error-50 dark:bg-error-500/10 text-3xl font-bold text-error-600">
-                  <i class="ph ph-warning-circle"></i>
+            <!-- Unified Compact Data-Driven Queue -->
+            <template x-for="v in activeQueue.filter(v => filterType === 'All' || filterType === v.type)" :key="v.ref">
+              <button type="button" @click="v.type === 'Quick Clean' ? openBus({ ref: v.ref, type: v.type, timer: v.timer }) : startDirectClean({ ref: v.ref, type: v.type, timer: v.timer })"
+                class="group block w-full overflow-hidden rounded-xl border border-gray-200 bg-white text-left shadow-sm transition-[transform,border-color,box-shadow] duration-150 hover:shadow-md active:scale-[0.99] dark:border-gray-800 dark:bg-gray-800 p-5"
+                :class="v.rejected ? 'hover:border-error-500 border-error-400 dark:border-error-600/60' : (v.type === 'Deep Clean' ? 'hover:border-purple-500' : (v.type === 'Overnight Clean' ? 'hover:border-warning-500' : 'hover:border-success-500'))">
+                <div class="flex items-center justify-between gap-4">
+                  <div class="flex items-center gap-4">
+                    <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl transition-colors"
+                      :class="v.rejected ? 'bg-error-50 text-error-600 dark:bg-error-500/10' : (v.type === 'Deep Clean' ? 'bg-purple-50 text-purple-600 dark:bg-purple-500/10' : (v.type === 'Overnight Clean' ? 'bg-warning-50 text-warning-600 dark:bg-warning-500/10' : 'bg-success-50 text-success-600 dark:bg-success-500/10'))">
+                      <i class="ph text-3xl" :class="v.rejected ? 'ph-warning-circle' : (v.type === 'Deep Clean' ? 'ph-pulse' : (v.type === 'Overnight Clean' ? 'ph-moon' : 'ph-sparkle'))"></i>
+                    </div>
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <h4 class="text-lg font-extrabold text-gray-900 dark:text-white" x-text="v.ref"></h4>
+                        <span class="rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide"
+                          :class="v.rejected ? 'bg-error-50 text-error-700 dark:bg-error-500/10 dark:text-error-400' : (v.type === 'Deep Clean' ? 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400' : (v.type === 'Overnight Clean' ? 'bg-warning-50 text-warning-700 dark:bg-warning-500/10 dark:text-warning-400' : 'bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-400'))"
+                          x-text="v.rejected ? 'QA REJECTED' : (v.type === 'Overnight Clean' ? 'OVN Cleaning' : v.type)"></span>
+                      </div>
+                      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1.5" x-text="v.vehicle + ' • ' + v.bay"></p>
+                    </div>
+                  </div>
+                  <div class="shrink-0 text-right">
+                    <span class="flex items-center justify-end gap-1.5 text-base font-bold"
+                      :class="v.rejected ? 'text-error-600 dark:text-error-400' : 'text-gray-700 dark:text-gray-300'">
+                      <i class="ph ph-timer text-gray-500 dark:text-gray-400"></i> <span class="tabular-nums" x-text="v.timer"></span>
+                    </span>
+                    <template x-if="v.type === 'Quick Clean'">
+                      <p class="text-[10px] font-bold uppercase tracking-widest text-brand-500 mt-1.5 flex items-center justify-end gap-1">
+                        <i class="ph ph-clock-counter-clockwise transition-transform duration-150 group-hover:-rotate-45 text-sm"></i> History
+                      </p>
+                    </template>
+                    <template x-if="v.type !== 'Quick Clean'">
+                      <div class="mt-1.5 inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-white transition-colors shadow-sm active:scale-[0.98]"
+                        :class="v.type === 'Deep Clean' ? 'bg-purple-500 hover:bg-purple-600' : 'bg-warning-500 hover:bg-warning-600'">
+                        <i class="ph-fill ph-play-circle text-sm"></i> Start
+                      </div>
+                    </template>
+                  </div>
                 </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span
-                    class="rounded-full bg-error-500 px-3 py-1 text-xs font-bold text-white uppercase tracking-wider">
-                    QA REJECTED
-                  </span>
-                  <span
-                    class="rounded-full bg-error-50 px-3 py-1 text-xs font-bold text-error-600 dark:bg-error-500/15 dark:text-error-500 uppercase tracking-wider">
-                    Deep Clean
-                  </span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #821</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">ICE, Double Decker <br /> <strong
-                    class="text-gray-700 dark:text-gray-300">Location: Bay 12</strong></p>
-                <div class="mt-4 rounded-xl bg-gray-50 p-4 border border-gray-200 dark:bg-gray-900/50 dark:border-gray-700">
-                  <p class="text-sm font-bold text-error-700 dark:text-error-500 mb-1">Failure Reason:</p>
-                  <p class="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2"><i class="ph ph-trash text-lg text-gray-500"></i> Trash remaining</p>
-                </div>
-              </div>
-              <div class="mt-6 flex flex-col sm:flex-row gap-3">
-                <button @click="fineAccepted = true; alert('Fine Accepted. Will be deducted.')"
-                  class="flex-1 rounded-xl border-2 border-error-200 bg-white py-3 font-bold text-error-600 hover:bg-error-50 transition-colors dark:bg-gray-800 dark:border-error-700 dark:hover:bg-gray-700">Accept Fine</button>
-                <button @click="view = 'checklist'; selectedBus = 'Bus #821 (Rework)'; timer = '00:30:00'; cleaningType = 'Deep Clean'"
-                  class="flex-1 rounded-xl bg-error-500 py-3 font-bold text-white transition-colors hover:bg-error-600 shadow-sm flex items-center justify-center gap-2"><i class="ph ph-arrow-counter-clockwise text-xl"></i> Retry Cleaning</button>
-              </div>
-            </div>
-
-            <!-- Bus Card: Quick Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Quick Clean'" @click="view = 'checklist'; selectedBus = 'Bus #402'; timer = '09:45'; cleaningType = 'Quick Clean'"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-brand-500 hover:border-brand-500 transition-colors">
-              <div class="flex items-start justify-between mb-4">
-                <div
-                  class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-brand-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span
-                    class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-500 uppercase tracking-wider">
-                    Quick Clean
-                  </span>
-                  <span
-                    class="flex items-center gap-1 rounded-full bg-warning-50 py-1 pl-3 pr-3.5 text-base font-bold text-warning-600 dark:bg-warning-500/15 dark:text-warning-500">
-                    <i class="ph ph-timer"></i> 09:45
-                  </span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #402</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">EV, Single Decker <br /> <strong
-                    class="text-gray-700 dark:text-gray-300">Location: Bay 4</strong></p>
-              </div>
-              <div class="mt-6">
-                <button
-                  class="w-full rounded-xl bg-gray-100 py-4 font-bold text-gray-700 text-lg dark:bg-gray-800 dark:text-gray-300 pointer-events-none">Start
-                  Cleaning</button>
-              </div>
-            </div>
-
-            <!-- Bus Card: Overnight Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Overnight Clean'" @click="view = 'checklist'; selectedBus = 'Bus #781'; timer = '02:15:00'; cleaningType = 'Overnight Clean'"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-purple-500 hover:border-purple-500 transition-colors">
-              <div class="flex items-start justify-between mb-4">
-                <div
-                  class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-purple-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span
-                    class="rounded-full bg-purple-50 px-3 py-1 text-xs font-bold text-purple-600 dark:bg-purple-500/15 dark:text-purple-400 uppercase tracking-wider">
-                    Overnight Clean
-                  </span>
-                  <span
-                    class="flex items-center gap-1 rounded-full bg-gray-100 py-1 pl-3 pr-3.5 text-base font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-400">
-                    <i class="ph ph-timer"></i> 02:15:00
-                  </span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #781</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">ICE, Double Decker <br /> <strong
-                    class="text-gray-700 dark:text-gray-300">Location: Bay 2</strong></p>
-              </div>
-              <div class="mt-6">
-                <button
-                  class="w-full rounded-xl bg-gray-100 py-4 font-bold text-gray-700 text-lg dark:bg-gray-800 dark:text-gray-300 pointer-events-none">Start Cleaning</button>
-              </div>
-            </div>
-
-            <!-- Bus Card: Deep Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Deep Clean'" @click="view = 'checklist'; selectedBus = 'Bus #905'; timer = '04:00:00'; cleaningType = 'Deep Clean'"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-error-500 hover:border-error-500 transition-colors">
-              <div class="flex items-start justify-between mb-4">
-                <div
-                  class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-error-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span
-                    class="rounded-full bg-error-50 px-3 py-1 text-xs font-bold text-error-600 dark:bg-error-500/15 dark:text-error-500 uppercase tracking-wider">
-                    Deep Clean
-                  </span>
-                  <span
-                    class="flex items-center gap-1 rounded-full bg-gray-100 py-1 pl-3 pr-3.5 text-base font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-400">
-                    <i class="ph ph-timer"></i> 04:00:00
-                  </span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #905</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">EV, Articulated <br /> <strong
-                    class="text-gray-700 dark:text-gray-300">Location: Bay 8</strong></p>
-              </div>
-              <div class="mt-6">
-                <button
-                  class="w-full rounded-xl bg-error-50 py-4 font-bold text-error-600 text-lg dark:bg-error-500/10 pointer-events-none">Start Cleaning</button>
-              </div>
-            </div>
-
-            <!-- Bus Card: Quick Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Quick Clean'" @click="view = 'checklist'; selectedBus = 'Bus #301'; timer = '10:00'; cleaningType = 'Quick Clean'"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-brand-500 hover:border-brand-500 transition-colors">
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-brand-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-500 uppercase tracking-wider">Quick Clean</span>
-                  <span class="flex items-center gap-1 rounded-full bg-warning-50 py-1 pl-3 pr-3.5 text-base font-bold text-warning-600 dark:bg-warning-500/15 dark:text-warning-500"><i class="ph ph-timer"></i> 10:00</span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #301</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">EV, Single Decker <br /> <strong class="text-gray-700 dark:text-gray-300">Location: Bay 1</strong></p>
-              </div>
-              <div class="mt-6">
-                <button class="w-full rounded-xl bg-gray-100 py-4 font-bold text-gray-700 text-lg dark:bg-gray-800 dark:text-gray-300 pointer-events-none">Start Cleaning</button>
-              </div>
-            </div>
-
-            <!-- Bus Card: Overnight Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Overnight Clean'" @click="view = 'checklist'; selectedBus = 'Bus #554'; timer = '03:45:00'; cleaningType = 'Overnight Clean'"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-purple-500 hover:border-purple-500 transition-colors">
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-purple-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span class="rounded-full bg-purple-50 px-3 py-1 text-xs font-bold text-purple-600 dark:bg-purple-500/15 dark:text-purple-400 uppercase tracking-wider">Overnight Clean</span>
-                  <span class="flex items-center gap-1 rounded-full bg-gray-100 py-1 pl-3 pr-3.5 text-base font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-400"><i class="ph ph-timer"></i> 03:45:00</span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #554</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">ICE, Double Decker <br /> <strong class="text-gray-700 dark:text-gray-300">Location: Bay 5</strong></p>
-              </div>
-              <div class="mt-6">
-                <button class="w-full rounded-xl bg-gray-100 py-4 font-bold text-gray-700 text-lg dark:bg-gray-800 dark:text-gray-300 pointer-events-none">Start Cleaning</button>
-              </div>
-            </div>
-
-            <!-- Bus Card: Quick Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Quick Clean'" @click="view = 'checklist'; selectedBus = 'Bus #882'; timer = '08:30'; cleaningType = 'Quick Clean'"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-brand-500 hover:border-brand-500 transition-colors">
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-brand-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-500 uppercase tracking-wider">Quick Clean</span>
-                  <span class="flex items-center gap-1 rounded-full bg-warning-50 py-1 pl-3 pr-3.5 text-base font-bold text-warning-600 dark:bg-warning-500/15 dark:text-warning-500"><i class="ph ph-timer"></i> 08:30</span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #882</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">EV, Single Decker <br /> <strong class="text-gray-700 dark:text-gray-300">Location: Bay 7</strong></p>
-              </div>
-              <div class="mt-6">
-                <button class="w-full rounded-xl bg-gray-100 py-4 font-bold text-gray-700 text-lg dark:bg-gray-800 dark:text-gray-300 pointer-events-none">Start Cleaning</button>
-              </div>
-            </div>
-
-            <!-- Bus Card: Deep Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Deep Clean'" @click="view = 'checklist'; selectedBus = 'Bus #102'; timer = '04:30:00'; cleaningType = 'Deep Clean'"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-error-500 hover:border-error-500 transition-colors">
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-error-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span class="rounded-full bg-error-50 px-3 py-1 text-xs font-bold text-error-600 dark:bg-error-500/15 dark:text-error-500 uppercase tracking-wider">Deep Clean</span>
-                  <span class="flex items-center gap-1 rounded-full bg-gray-100 py-1 pl-3 pr-3.5 text-base font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-400"><i class="ph ph-timer"></i> 04:30:00</span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #102</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">ICE, Single Decker <br /> <strong class="text-gray-700 dark:text-gray-300">Location: Bay 10</strong></p>
-              </div>
-              <div class="mt-6">
-                <button class="w-full rounded-xl bg-gray-100 py-4 font-bold text-gray-700 text-lg dark:bg-gray-800 dark:text-gray-300 pointer-events-none">Start Cleaning</button>
-              </div>
-            </div>
-
-            <!-- Bus Card: Quick Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Quick Clean'" @click="view = 'checklist'; selectedBus = 'Bus #763'; timer = '12:00'; cleaningType = 'Quick Clean'"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-brand-500 hover:border-brand-500 transition-colors">
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-brand-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-500 uppercase tracking-wider">Quick Clean</span>
-                  <span class="flex items-center gap-1 rounded-full bg-gray-100 py-1 pl-3 pr-3.5 text-base font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-400"><i class="ph ph-timer"></i> 12:00</span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #763</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">EV, Articulated <br /> <strong class="text-gray-700 dark:text-gray-300">Location: Bay 12</strong></p>
-              </div>
-              <div class="mt-6">
-                <button class="w-full rounded-xl bg-gray-100 py-4 font-bold text-gray-700 text-lg dark:bg-gray-800 dark:text-gray-300 pointer-events-none">Start Cleaning</button>
-              </div>
-            </div>
-
-            <!-- Bus Card: Overnight Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Overnight Clean'" @click="view = 'checklist'; selectedBus = 'Bus #919'; timer = '02:00:00'; cleaningType = 'Overnight Clean'"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-purple-500 hover:border-purple-500 transition-colors">
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-purple-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span class="rounded-full bg-purple-50 px-3 py-1 text-xs font-bold text-purple-600 dark:bg-purple-500/15 dark:text-purple-400 uppercase tracking-wider">Overnight Clean</span>
-                  <span class="flex items-center gap-1 rounded-full bg-warning-50 py-1 pl-3 pr-3.5 text-base font-bold text-warning-600 dark:bg-warning-500/15 dark:text-warning-500"><i class="ph ph-timer"></i> 02:00:00</span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #919</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">ICE, Single Decker <br /> <strong class="text-gray-700 dark:text-gray-300">Location: Bay 15</strong></p>
-              </div>
-              <div class="mt-6">
-                <button class="w-full rounded-xl bg-purple-50 py-4 font-bold text-purple-600 text-lg dark:bg-purple-500/10 pointer-events-none">Start Cleaning</button>
-              </div>
-            </div>
-
-            <!-- Bus Card: Quick Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Quick Clean'" @click="view = 'checklist'; selectedBus = 'Bus #221'; timer = '05:30'; cleaningType = 'Quick Clean'"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-brand-500 hover:border-brand-500 transition-colors">
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-brand-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-500 uppercase tracking-wider">Quick Clean</span>
-                  <span class="flex items-center gap-1 rounded-full bg-error-50 py-1 pl-3 pr-3.5 text-base font-bold text-error-600 dark:bg-error-500/15 dark:text-error-500"><i class="ph ph-timer"></i> 05:30</span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #221</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">EV, Single Decker <br /> <strong class="text-gray-700 dark:text-gray-300">Location: Bay 16</strong></p>
-              </div>
-              <div class="mt-6">
-                <button class="w-full rounded-xl bg-error-50 py-4 font-bold text-error-600 text-lg dark:bg-error-500/10 pointer-events-none">Hurry! Start Cleaning</button>
-              </div>
-            </div>
-
-            <!-- Bus Card: Deep Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Deep Clean'" @click="view = 'checklist'; selectedBus = 'Bus #444'; timer = '03:15:00'; cleaningType = 'Deep Clean'"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-error-500 hover:border-error-500 transition-colors">
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-error-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span class="rounded-full bg-error-50 px-3 py-1 text-xs font-bold text-error-600 dark:bg-error-500/15 dark:text-error-500 uppercase tracking-wider">Deep Clean</span>
-                  <span class="flex items-center gap-1 rounded-full bg-gray-100 py-1 pl-3 pr-3.5 text-base font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-400"><i class="ph ph-timer"></i> 03:15:00</span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #444</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">ICE, Double Decker <br /> <strong class="text-gray-700 dark:text-gray-300">Location: Bay 20</strong></p>
-              </div>
-              <div class="mt-6">
-                <button class="w-full rounded-xl bg-gray-100 py-4 font-bold text-gray-700 text-lg dark:bg-gray-800 dark:text-gray-300 pointer-events-none">Start Cleaning</button>
-              </div>
-            </div>
-
-            <!-- Bus Card: Quick Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Quick Clean'" @click="view = 'checklist'; selectedBus = 'Bus #650'; timer = '11:15'; cleaningType = 'Quick Clean'"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-brand-500 hover:border-brand-500 transition-colors">
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-brand-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span class="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-600 dark:bg-brand-500/15 dark:text-brand-500 uppercase tracking-wider">Quick Clean</span>
-                  <span class="flex items-center gap-1 rounded-full bg-gray-100 py-1 pl-3 pr-3.5 text-base font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-400"><i class="ph ph-timer"></i> 11:15</span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #650</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">EV, Single Decker <br /> <strong class="text-gray-700 dark:text-gray-300">Location: Bay 22</strong></p>
-              </div>
-              <div class="mt-6">
-                <button class="w-full rounded-xl bg-gray-100 py-4 font-bold text-gray-700 text-lg dark:bg-gray-800 dark:text-gray-300 pointer-events-none">Start Cleaning</button>
-              </div>
-            </div>
-
-            <!-- Bus Card: Overnight Clean -->
-            <div x-show="filterType === 'All' || filterType === 'Overnight Clean'" @click="view = 'checklist'; selectedBus = 'Bus #112'; timer = '04:10:00'; cleaningType = 'Overnight Clean'"
-              class="cursor-pointer rounded-2xl border-2 border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-white/[0.03] active:border-purple-500 hover:border-purple-500 transition-colors">
-              <div class="flex items-start justify-between mb-4">
-                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 dark:bg-gray-800 text-3xl font-bold">
-                  <i class="ph ph-bus text-purple-500"></i>
-                </div>
-                <div class="flex flex-col items-end gap-2">
-                  <span class="rounded-full bg-purple-50 px-3 py-1 text-xs font-bold text-purple-600 dark:bg-purple-500/15 dark:text-purple-400 uppercase tracking-wider">Overnight Clean</span>
-                  <span class="flex items-center gap-1 rounded-full bg-gray-100 py-1 pl-3 pr-3.5 text-base font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-400"><i class="ph ph-timer"></i> 04:10:00</span>
-                </div>
-              </div>
-              <div class="mt-2">
-                <h4 class="text-title-lg font-extrabold text-gray-800 dark:text-white/90">Bus #112</h4>
-                <p class="text-base text-gray-500 dark:text-gray-400 mt-1">ICE, Single Decker <br /> <strong class="text-gray-700 dark:text-gray-300">Location: Bay 25</strong></p>
-              </div>
-              <div class="mt-6">
-                <button class="w-full rounded-xl bg-gray-100 py-4 font-bold text-gray-700 text-lg dark:bg-gray-800 dark:text-gray-300 pointer-events-none">Start Cleaning</button>
-              </div>
-            </div>
+              </button>
+            </template>
           </div>
 
           <!-- Checklist View -->
@@ -456,11 +199,10 @@
 
             <!-- Prep Phase -->
             <div class="mt-6">
-              <h3 class="mb-4 text-xl font-bold text-gray-800 dark:text-white/90 uppercase tracking-wide">1. Preparation
-              </h3>
+              <h3 class="mb-4 text-xl font-bold text-gray-800 dark:text-white/90 uppercase tracking-wide">1. Preparation</h3>
 
               <!-- Task Card: Supplies -->
-              <div x-data="{ done: false, uploaded: false, previewUrl: null, handleUpload(e) { if(!e.target.files.length) return; this.uploaded = true; let reader = new FileReader(); reader.onload = (e) => { this.previewUrl = e.target.result; }; reader.readAsDataURL(e.target.files[0]); } }"
+              <div x-data="{ done: false }"
                 class="mb-4 overflow-hidden rounded-2xl border-2 transition-all duration-200"
                 :class="done ? 'border-success-500 bg-success-50 dark:bg-success-500/10' : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'">
                 <div @click="done = !done" class="flex cursor-pointer items-center gap-4 p-5">
@@ -479,12 +221,11 @@
 
             <!-- Interior Phase -->
             <div class="mt-8">
-              <h3 class="mb-4 text-xl font-bold text-gray-800 dark:text-white/90 uppercase tracking-wide">2. Interior
-              </h3>
+              <h3 class="mb-4 text-xl font-bold text-gray-800 dark:text-white/90 uppercase tracking-wide">2. Interior</h3>
 
               <!-- Task Card: Trash -->
-              <div x-data="{ done: false, uploaded: false, previewUrl: null, handleUpload(e) { if(!e.target.files.length) return; this.uploaded = true; let reader = new FileReader(); reader.onload = (e) => { this.previewUrl = e.target.result; }; reader.readAsDataURL(e.target.files[0]); } }"
-                class="mb-5 overflow-hidden rounded-2xl border-2 transition-all duration-200"
+              <div x-data="{ done: false }"
+                class="mb-4 overflow-hidden rounded-2xl border-2 transition-all duration-200"
                 :class="done ? 'border-success-500 bg-success-50 dark:bg-success-500/10' : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'">
                 <div @click="done = !done" class="flex cursor-pointer items-center gap-4 p-5">
                   <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full transition-colors"
@@ -497,26 +238,11 @@
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Empty all bins and clear aisles</p>
                   </div>
                 </div>
-                <!-- Photo Upload Action -->
-                <div class="border-t border-gray-100 p-4 dark:border-gray-700"
-                  :class="done ? 'bg-white/50 dark:bg-black/20' : 'bg-gray-50 dark:bg-gray-900/50'">
-                  <label
-                    class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-50 px-4 py-3 font-bold text-brand-600 transition-colors hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20">
-                    <input type="file" class="hidden" accept="image/*" capture="environment" @change="handleUpload" />
-                    <i class="ph ph-camera text-xl" x-show="!uploaded"></i>
-                    <span x-text="uploaded ? 'Photo Attached!' : 'Upload Photo Proof'"></span>
-                    <i x-show="uploaded" class="ph ph-check-circle text-success-500 ml-2"></i>
-                  </label>
-                  <div x-show="previewUrl" x-transition class="mt-4 relative rounded-xl overflow-hidden border border-gray-200 shadow-sm dark:border-gray-700 mx-auto w-full h-48 bg-gray-100 dark:bg-gray-800">
-                    <img :src="previewUrl" class="w-full h-full object-cover" />
-                    <button @click.prevent="previewUrl = null; uploaded = false" class="absolute top-2 right-2 flex items-center justify-center bg-gray-900/70 text-white rounded-full h-10 w-10 hover:bg-error-500 transition-colors backdrop-blur-sm z-10"><i class="ph ph-trash text-lg"></i></button>
-                  </div>
-                </div>
               </div>
 
               <!-- Task Card: Floors -->
-              <div x-data="{ done: false, uploaded: false, previewUrl: null, handleUpload(e) { if(!e.target.files.length) return; this.uploaded = true; let reader = new FileReader(); reader.onload = (e) => { this.previewUrl = e.target.result; }; reader.readAsDataURL(e.target.files[0]); } }"
-                class="mb-5 overflow-hidden rounded-2xl border-2 transition-all duration-200"
+              <div x-data="{ done: false }"
+                class="mb-4 overflow-hidden rounded-2xl border-2 transition-all duration-200"
                 :class="done ? 'border-success-500 bg-success-50 dark:bg-success-500/10' : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'">
                 <div @click="done = !done" class="flex cursor-pointer items-center gap-4 p-5">
                   <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full transition-colors"
@@ -529,25 +255,11 @@
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Sweep front to back</p>
                   </div>
                 </div>
-                <div class="border-t border-gray-100 p-4 dark:border-gray-700"
-                  :class="done ? 'bg-white/50 dark:bg-black/20' : 'bg-gray-50 dark:bg-gray-900/50'">
-                  <label
-                    class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-50 px-4 py-3 font-bold text-brand-600 transition-colors hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20">
-                    <input type="file" class="hidden" accept="image/*" capture="environment" @change="handleUpload" />
-                    <i class="ph ph-camera text-xl" x-show="!uploaded"></i>
-                    <span x-text="uploaded ? 'Photo Attached!' : 'Upload Photo Proof'"></span>
-                    <i x-show="uploaded" class="ph ph-check-circle text-success-500 ml-2"></i>
-                  </label>
-                  <div x-show="previewUrl" x-transition class="mt-4 relative rounded-xl overflow-hidden border border-gray-200 shadow-sm dark:border-gray-700 mx-auto w-full h-48 bg-gray-100 dark:bg-gray-800">
-                    <img :src="previewUrl" class="w-full h-full object-cover" />
-                    <button @click.prevent="previewUrl = null; uploaded = false" class="absolute top-2 right-2 flex items-center justify-center bg-gray-900/70 text-white rounded-full h-10 w-10 hover:bg-error-500 transition-colors backdrop-blur-sm z-10"><i class="ph ph-trash text-lg"></i></button>
-                  </div>
-                </div>
               </div>
 
               <!-- Task Card: Seats -->
-              <div x-data="{ done: false, uploaded: false, previewUrl: null, handleUpload(e) { if(!e.target.files.length) return; this.uploaded = true; let reader = new FileReader(); reader.onload = (e) => { this.previewUrl = e.target.result; }; reader.readAsDataURL(e.target.files[0]); } }"
-                class="mb-5 overflow-hidden rounded-2xl border-2 transition-all duration-200"
+              <div x-data="{ done: false }"
+                class="mb-4 overflow-hidden rounded-2xl border-2 transition-all duration-200"
                 :class="done ? 'border-success-500 bg-success-50 dark:bg-success-500/10' : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'">
                 <div @click="done = !done" class="flex cursor-pointer items-center gap-4 p-5">
                   <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full transition-colors"
@@ -560,25 +272,11 @@
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Wipe stains and dust off seats</p>
                   </div>
                 </div>
-                <div class="border-t border-gray-100 p-4 dark:border-gray-700"
-                  :class="done ? 'bg-white/50 dark:bg-black/20' : 'bg-gray-50 dark:bg-gray-900/50'">
-                  <label
-                    class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-50 px-4 py-3 font-bold text-brand-600 transition-colors hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20">
-                    <input type="file" class="hidden" accept="image/*" capture="environment" @change="handleUpload" />
-                    <i class="ph ph-camera text-xl" x-show="!uploaded"></i>
-                    <span x-text="uploaded ? 'Photo Attached!' : 'Upload Photo Proof'"></span>
-                    <i x-show="uploaded" class="ph ph-check-circle text-success-500 ml-2"></i>
-                  </label>
-                  <div x-show="previewUrl" x-transition class="mt-4 relative rounded-xl overflow-hidden border border-gray-200 shadow-sm dark:border-gray-700 mx-auto w-full h-48 bg-gray-100 dark:bg-gray-800">
-                    <img :src="previewUrl" class="w-full h-full object-cover" />
-                    <button @click.prevent="previewUrl = null; uploaded = false" class="absolute top-2 right-2 flex items-center justify-center bg-gray-900/70 text-white rounded-full h-10 w-10 hover:bg-error-500 transition-colors backdrop-blur-sm z-10"><i class="ph ph-trash text-lg"></i></button>
-                  </div>
-                </div>
               </div>
 
               <!-- Task Card: Touchpoints -->
-              <div x-data="{ done: false, uploaded: false, previewUrl: null, handleUpload(e) { if(!e.target.files.length) return; this.uploaded = true; let reader = new FileReader(); reader.onload = (e) => { this.previewUrl = e.target.result; }; reader.readAsDataURL(e.target.files[0]); } }"
-                class="mb-5 overflow-hidden rounded-2xl border-2 transition-all duration-200"
+              <div x-data="{ done: false }"
+                class="mb-4 overflow-hidden rounded-2xl border-2 transition-all duration-200"
                 :class="done ? 'border-success-500 bg-success-50 dark:bg-success-500/10' : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'">
                 <div @click="done = !done" class="flex cursor-pointer items-center gap-4 p-5">
                   <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full transition-colors"
@@ -591,25 +289,12 @@
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Poles, handles, stop buttons</p>
                   </div>
                 </div>
-                <div class="border-t border-gray-100 p-4 dark:border-gray-700"
-                  :class="done ? 'bg-white/50 dark:bg-black/20' : 'bg-gray-50 dark:bg-gray-900/50'">
-                  <label
-                    class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-50 px-4 py-3 font-bold text-brand-600 transition-colors hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20">
-                    <input type="file" class="hidden" accept="image/*" capture="environment" @change="handleUpload" />
-                    <i class="ph ph-camera text-xl" x-show="!uploaded"></i>
-                    <span x-text="uploaded ? 'Photo Attached!' : 'Upload Photo Proof'"></span>
-                    <i x-show="uploaded" class="ph ph-check-circle text-success-500 ml-2"></i>
-                  </label>
-                  <div x-show="previewUrl" x-transition class="mt-4 relative rounded-xl overflow-hidden border border-gray-200 shadow-sm dark:border-gray-700 mx-auto w-full h-48 bg-gray-100 dark:bg-gray-800">
-                    <img :src="previewUrl" class="w-full h-full object-cover" />
-                    <button @click.prevent="previewUrl = null; uploaded = false" class="absolute top-2 right-2 flex items-center justify-center bg-gray-900/70 text-white rounded-full h-10 w-10 hover:bg-error-500 transition-colors backdrop-blur-sm z-10"><i class="ph ph-trash text-lg"></i></button>
-                  </div>
-                </div>
               </div>
+
               <!-- Deep Clean Task: Shampoo Seats -->
-              <div x-data="{ done: false, uploaded: false, previewUrl: null, handleUpload(e) { if(!e.target.files.length) return; this.uploaded = true; let reader = new FileReader(); reader.onload = (e) => { this.previewUrl = e.target.result; }; reader.readAsDataURL(e.target.files[0]); } }"
+              <div x-data="{ done: false }"
                 x-show="cleaningType === 'Deep Clean'"
-                class="mb-5 overflow-hidden rounded-2xl border-2 transition-all duration-200"
+                class="mb-4 overflow-hidden rounded-2xl border-2 transition-all duration-200"
                 :class="done ? 'border-success-500 bg-success-50 dark:bg-success-500/10' : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'">
                 <div @click="done = !done" class="flex cursor-pointer items-center gap-4 p-5">
                   <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full transition-colors"
@@ -622,26 +307,12 @@
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Deep clean all fabric seats</p>
                   </div>
                 </div>
-                <div class="border-t border-gray-100 p-4 dark:border-gray-700"
-                  :class="done ? 'bg-white/50 dark:bg-black/20' : 'bg-gray-50 dark:bg-gray-900/50'">
-                  <label
-                    class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-50 px-4 py-3 font-bold text-brand-600 transition-colors hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20">
-                    <input type="file" class="hidden" accept="image/*" capture="environment" @change="handleUpload" />
-                    <i class="ph ph-camera text-xl" x-show="!uploaded"></i>
-                    <span x-text="uploaded ? 'Photo Attached!' : 'Upload Photo Proof'"></span>
-                    <i x-show="uploaded" class="ph ph-check-circle text-success-500 ml-2"></i>
-                  </label>
-                  <div x-show="previewUrl" x-transition class="mt-4 relative rounded-xl overflow-hidden border border-gray-200 shadow-sm dark:border-gray-700 mx-auto w-full h-48 bg-gray-100 dark:bg-gray-800">
-                    <img :src="previewUrl" class="w-full h-full object-cover" />
-                    <button @click.prevent="previewUrl = null; uploaded = false" class="absolute top-2 right-2 flex items-center justify-center bg-gray-900/70 text-white rounded-full h-10 w-10 hover:bg-error-500 transition-colors backdrop-blur-sm z-10"><i class="ph ph-trash text-lg"></i></button>
-                  </div>
-                </div>
               </div>
 
               <!-- Overnight Task: Mopping -->
-              <div x-data="{ done: false, uploaded: false, previewUrl: null, handleUpload(e) { if(!e.target.files.length) return; this.uploaded = true; let reader = new FileReader(); reader.onload = (e) => { this.previewUrl = e.target.result; }; reader.readAsDataURL(e.target.files[0]); } }"
+              <div x-data="{ done: false }"
                 x-show="cleaningType === 'Deep Clean' || cleaningType === 'Overnight Clean'"
-                class="mb-5 overflow-hidden rounded-2xl border-2 transition-all duration-200"
+                class="mb-4 overflow-hidden rounded-2xl border-2 transition-all duration-200"
                 :class="done ? 'border-success-500 bg-success-50 dark:bg-success-500/10' : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'">
                 <div @click="done = !done" class="flex cursor-pointer items-center gap-4 p-5">
                   <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full transition-colors"
@@ -654,31 +325,16 @@
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Wet mop interior floors with solution</p>
                   </div>
                 </div>
-                <div class="border-t border-gray-100 p-4 dark:border-gray-700"
-                  :class="done ? 'bg-white/50 dark:bg-black/20' : 'bg-gray-50 dark:bg-gray-900/50'">
-                  <label
-                    class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-50 px-4 py-3 font-bold text-brand-600 transition-colors hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20">
-                    <input type="file" class="hidden" accept="image/*" capture="environment" @change="handleUpload" />
-                    <i class="ph ph-camera text-xl" x-show="!uploaded"></i>
-                    <span x-text="uploaded ? 'Photo Attached!' : 'Upload Photo Proof'"></span>
-                    <i x-show="uploaded" class="ph ph-check-circle text-success-500 ml-2"></i>
-                  </label>
-                  <div x-show="previewUrl" x-transition class="mt-4 relative rounded-xl overflow-hidden border border-gray-200 shadow-sm dark:border-gray-700 mx-auto w-full h-48 bg-gray-100 dark:bg-gray-800">
-                    <img :src="previewUrl" class="w-full h-full object-cover" />
-                    <button @click.prevent="previewUrl = null; uploaded = false" class="absolute top-2 right-2 flex items-center justify-center bg-gray-900/70 text-white rounded-full h-10 w-10 hover:bg-error-500 transition-colors backdrop-blur-sm z-10"><i class="ph ph-trash text-lg"></i></button>
-                  </div>
-                </div>
               </div>
             </div>
 
             <!-- Exterior Phase -->
             <div class="mt-8">
-              <h3 class="mb-4 text-xl font-bold text-gray-800 dark:text-white/90 uppercase tracking-wide">3. Exterior
-              </h3>
+              <h3 class="mb-4 text-xl font-bold text-gray-800 dark:text-white/90 uppercase tracking-wide">3. Exterior</h3>
 
               <!-- Task Card: Pre-rinse -->
-              <div x-data="{ done: false, uploaded: false, previewUrl: null, handleUpload(e) { if(!e.target.files.length) return; this.uploaded = true; let reader = new FileReader(); reader.onload = (e) => { this.previewUrl = e.target.result; }; reader.readAsDataURL(e.target.files[0]); } }"
-                class="mb-5 overflow-hidden rounded-2xl border-2 transition-all duration-200"
+              <div x-data="{ done: false }"
+                class="mb-4 overflow-hidden rounded-2xl border-2 transition-all duration-200"
                 :class="done ? 'border-success-500 bg-success-50 dark:bg-success-500/10' : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'">
                 <div @click="done = !done" class="flex cursor-pointer items-center gap-4 p-5">
                   <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full transition-colors"
@@ -691,25 +347,11 @@
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Hose down exterior dirt</p>
                   </div>
                 </div>
-                <div class="border-t border-gray-100 p-4 dark:border-gray-700"
-                  :class="done ? 'bg-white/50 dark:bg-black/20' : 'bg-gray-50 dark:bg-gray-900/50'">
-                  <label
-                    class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-50 px-4 py-3 font-bold text-brand-600 transition-colors hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20">
-                    <input type="file" class="hidden" accept="image/*" capture="environment" @change="handleUpload" />
-                    <i class="ph ph-camera text-xl" x-show="!uploaded"></i>
-                    <span x-text="uploaded ? 'Photo Attached!' : 'Upload Photo Proof'"></span>
-                    <i x-show="uploaded" class="ph ph-check-circle text-success-500 ml-2"></i>
-                  </label>
-                  <div x-show="previewUrl" x-transition class="mt-4 relative rounded-xl overflow-hidden border border-gray-200 shadow-sm dark:border-gray-700 mx-auto w-full h-48 bg-gray-100 dark:bg-gray-800">
-                    <img :src="previewUrl" class="w-full h-full object-cover" />
-                    <button @click.prevent="previewUrl = null; uploaded = false" class="absolute top-2 right-2 flex items-center justify-center bg-gray-900/70 text-white rounded-full h-10 w-10 hover:bg-error-500 transition-colors backdrop-blur-sm z-10"><i class="ph ph-trash text-lg"></i></button>
-                  </div>
-                </div>
               </div>
 
               <!-- Task Card: Liquid -->
-              <div x-data="{ done: false, uploaded: false, previewUrl: null, handleUpload(e) { if(!e.target.files.length) return; this.uploaded = true; let reader = new FileReader(); reader.onload = (e) => { this.previewUrl = e.target.result; }; reader.readAsDataURL(e.target.files[0]); } }"
-                class="mb-5 overflow-hidden rounded-2xl border-2 transition-all duration-200"
+              <div x-data="{ done: false }"
+                class="mb-4 overflow-hidden rounded-2xl border-2 transition-all duration-200"
                 :class="done ? 'border-success-500 bg-success-50 dark:bg-success-500/10' : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'">
                 <div @click="done = !done" class="flex cursor-pointer items-center gap-4 p-5">
                   <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full transition-colors"
@@ -722,25 +364,11 @@
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Apply soap and scrub</p>
                   </div>
                 </div>
-                <div class="border-t border-gray-100 p-4 dark:border-gray-700"
-                  :class="done ? 'bg-white/50 dark:bg-black/20' : 'bg-gray-50 dark:bg-gray-900/50'">
-                  <label
-                    class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-50 px-4 py-3 font-bold text-brand-600 transition-colors hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20">
-                    <input type="file" class="hidden" accept="image/*" capture="environment" @change="handleUpload" />
-                    <i class="ph ph-camera text-xl" x-show="!uploaded"></i>
-                    <span x-text="uploaded ? 'Photo Attached!' : 'Upload Photo Proof'"></span>
-                    <i x-show="uploaded" class="ph ph-check-circle text-success-500 ml-2"></i>
-                  </label>
-                  <div x-show="previewUrl" x-transition class="mt-4 relative rounded-xl overflow-hidden border border-gray-200 shadow-sm dark:border-gray-700 mx-auto w-full h-48 bg-gray-100 dark:bg-gray-800">
-                    <img :src="previewUrl" class="w-full h-full object-cover" />
-                    <button @click.prevent="previewUrl = null; uploaded = false" class="absolute top-2 right-2 flex items-center justify-center bg-gray-900/70 text-white rounded-full h-10 w-10 hover:bg-error-500 transition-colors backdrop-blur-sm z-10"><i class="ph ph-trash text-lg"></i></button>
-                  </div>
-                </div>
               </div>
 
               <!-- Task Card: Dry -->
-              <div x-data="{ done: false, uploaded: false, previewUrl: null, handleUpload(e) { if(!e.target.files.length) return; this.uploaded = true; let reader = new FileReader(); reader.onload = (e) => { this.previewUrl = e.target.result; }; reader.readAsDataURL(e.target.files[0]); } }"
-                class="mb-5 overflow-hidden rounded-2xl border-2 transition-all duration-200"
+              <div x-data="{ done: false }"
+                class="mb-4 overflow-hidden rounded-2xl border-2 transition-all duration-200"
                 :class="done ? 'border-success-500 bg-success-50 dark:bg-success-500/10' : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'">
                 <div @click="done = !done" class="flex cursor-pointer items-center gap-4 p-5">
                   <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full transition-colors"
@@ -753,19 +381,115 @@
                     <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Prevent water spots</p>
                   </div>
                 </div>
-                <div class="border-t border-gray-100 p-4 dark:border-gray-700"
-                  :class="done ? 'bg-white/50 dark:bg-black/20' : 'bg-gray-50 dark:bg-gray-900/50'">
-                  <label
-                    class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-brand-50 px-4 py-3 font-bold text-brand-600 transition-colors hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500/20">
-                    <input type="file" class="hidden" accept="image/*" capture="environment" @change="handleUpload" />
-                    <i class="ph ph-camera text-xl" x-show="!uploaded"></i>
-                    <span x-text="uploaded ? 'Photo Attached!' : 'Upload Photo Proof'"></span>
-                    <i x-show="uploaded" class="ph ph-check-circle text-success-500 ml-2"></i>
-                  </label>
-                  <div x-show="previewUrl" x-transition class="mt-4 relative rounded-xl overflow-hidden border border-gray-200 shadow-sm dark:border-gray-700 mx-auto w-full h-48 bg-gray-100 dark:bg-gray-800">
-                    <img :src="previewUrl" class="w-full h-full object-cover" />
-                    <button @click.prevent="previewUrl = null; uploaded = false" class="absolute top-2 right-2 flex items-center justify-center bg-gray-900/70 text-white rounded-full h-10 w-10 hover:bg-error-500 transition-colors backdrop-blur-sm z-10"><i class="ph ph-trash text-lg"></i></button>
+              </div>
+            </div>
+
+            <!-- Consolidated Photo Verification Section -->
+            <div class="mt-8 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900 shadow-sm"
+              x-data="{ 
+                photoGuideOpen: false, 
+                guideType: '',
+                photos: { interior: null, exterior: null },
+                uploadPhoto(e, type) {
+                  if(!e.target.files.length) return;
+                  let reader = new FileReader();
+                  reader.onload = (event) => {
+                    this.photos[type] = event.target.result;
+                  };
+                  reader.readAsDataURL(e.target.files[0]);
+                }
+              }">
+              <div class="flex items-center justify-between mb-4 border-b border-gray-150 dark:border-gray-800 pb-4">
+                <div>
+                  <h3 class="text-xl font-bold text-gray-850 dark:text-white">4. Quality Proof (Optimal Angles)</h3>
+                  <p class="text-xs text-gray-500 dark:text-gray-450 mt-1">Upload exactly two wide-angle photos to satisfy SLA contract verification guidelines.</p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <!-- Slot 1: Interior -->
+                <div class="flex flex-col gap-3 rounded-xl border border-gray-150 dark:border-gray-800 p-4">
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm font-bold text-gray-700 dark:text-gray-300">Interior (Rear-to-Front)</span>
+                    <button @click="photoGuideOpen = true; guideType = 'interior'" class="text-xs text-brand-500 font-bold hover:underline">
+                      <i class="ph ph-info mr-0.5"></i> Camera Guide
+                    </button>
                   </div>
+                  
+                  <label class="flex h-36 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-750 transition-all overflow-hidden relative">
+                    <input type="file" class="hidden" accept="image/*" capture="environment" @change="uploadPhoto($event, 'interior')" />
+                    <template x-if="!photos.interior">
+                      <div class="text-center">
+                        <i class="ph ph-camera text-3xl text-gray-450"></i>
+                        <span class="block text-xs font-bold text-gray-600 dark:text-gray-400 mt-1">Take Interior Photo</span>
+                      </div>
+                    </template>
+                    <template x-if="photos.interior">
+                      <div class="h-full w-full">
+                        <img :src="photos.interior" class="h-full w-full object-cover" />
+                        <button @click.prevent="photos.interior = null" class="absolute top-2 right-2 flex items-center justify-center bg-black/60 text-white rounded-full h-8 w-8 hover:bg-error-500 transition-colors z-10"><i class="ph ph-trash text-sm"></i></button>
+                      </div>
+                    </template>
+                  </label>
+                </div>
+
+                <!-- Slot 2: Exterior -->
+                <div class="flex flex-col gap-3 rounded-xl border border-gray-150 dark:border-gray-800 p-4">
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm font-bold text-gray-700 dark:text-gray-300">Exterior (Side Ground Check)</span>
+                    <button @click="photoGuideOpen = true; guideType = 'exterior'" class="text-xs text-brand-500 font-bold hover:underline">
+                      <i class="ph ph-info mr-0.5"></i> Camera Guide
+                    </button>
+                  </div>
+                  
+                  <label class="flex h-36 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-750 transition-all overflow-hidden relative">
+                    <input type="file" class="hidden" accept="image/*" capture="environment" @change="uploadPhoto($event, 'exterior')" />
+                    <template x-if="!photos.exterior">
+                      <div class="text-center">
+                        <i class="ph ph-camera text-3xl text-gray-450"></i>
+                        <span class="block text-xs font-bold text-gray-600 dark:text-gray-400 mt-1">Take Exterior Photo</span>
+                      </div>
+                    </template>
+                    <template x-if="photos.exterior">
+                      <div class="h-full w-full">
+                        <img :src="photos.exterior" class="h-full w-full object-cover" />
+                        <button @click.prevent="photos.exterior = null" class="absolute top-2 right-2 flex items-center justify-center bg-black/60 text-white rounded-full h-8 w-8 hover:bg-error-500 transition-colors z-10"><i class="ph ph-trash text-sm"></i></button>
+                      </div>
+                    </template>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Camera Angle Guide Modal -->
+              <div x-show="photoGuideOpen" class="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4" style="display: none;">
+                <div @click.outside="photoGuideOpen = false" class="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800 border border-gray-150 dark:border-gray-700">
+                  <h4 class="text-lg font-bold text-gray-800 dark:text-white mb-2 flex items-center gap-2">
+                    <i class="ph ph-info text-brand-500"></i> Optimal Capture Angle
+                  </h4>
+                  
+                  <template x-if="guideType === 'interior'">
+                    <div>
+                      <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                        Stand at the center of the rear exit door. Point the camera forward toward the driver's cabin. Align the central aisle floor in the lower middle third of your frame to cover the maximum area.
+                      </p>
+                      <div class="w-full h-40 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center text-center p-4 border border-gray-200 border-dashed">
+                        <span class="text-xs text-gray-400 font-semibold">Rear exit door -> Windshield perspective</span>
+                      </div>
+                    </div>
+                  </template>
+
+                  <template x-if="guideType === 'exterior'">
+                    <div>
+                      <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                        Stand 10 feet back from the front door corner at a 45-degree angle. Frame the shot so that the entire front face and the driver-side panel are visible in one ground check layout.
+                      </p>
+                      <div class="w-full h-40 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center text-center p-4 border border-gray-200 border-dashed">
+                        <span class="text-xs text-gray-400 font-semibold">45-degree front corner perspective</span>
+                      </div>
+                    </div>
+                  </template>
+
+                  <button @click="photoGuideOpen = false" class="mt-5 w-full rounded-xl bg-brand-500 py-3 font-bold text-white transition hover:bg-brand-600">Got it</button>
                 </div>
               </div>
             </div>
@@ -802,6 +526,7 @@
 
           </div>
 
+
         </div>
       </main>
       <!-- ===== Main Content End ===== -->
@@ -809,6 +534,91 @@
     <!-- ===== Content Area End ===== -->
   </div>
   <!-- ===== Page Wrapper End ===== -->
+
+  <!-- ===== Vehicle Detail Modal ===== -->
+  <div x-show="detailOpen" @keydown.escape.window="detailOpen = false" @click.self="detailOpen = false"
+    class="fixed inset-0 z-[9999999] flex items-end justify-center bg-black/60 backdrop-blur-sm p-0 sm:items-center sm:p-4"
+    style="display: none;"
+    x-transition:enter="transition-opacity ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+    x-transition:leave="transition-opacity ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+
+    <div
+      class="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl border border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-gray-900 sm:max-w-lg sm:rounded-3xl"
+      x-transition:enter="transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)]"
+      x-transition:enter-start="opacity-0 translate-y-4 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+      x-transition:leave="transition-[opacity,transform] duration-150 ease-in"
+      x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-2 sm:scale-95">
+
+      <!-- Header -->
+      <div class="flex items-start justify-between gap-4 border-b border-gray-100 p-6 pb-4 dark:border-gray-800">
+        <div>
+          <div class="flex items-center gap-2.5">
+            <h3 class="text-balance text-2xl font-black text-gray-900 dark:text-white" x-text="activeBus.ref"></h3>
+            <span class="rounded-full border border-brand-100 bg-brand-50 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-brand-600 dark:border-brand-800 dark:bg-brand-500/15 dark:text-brand-500" x-text="activeBus.type"></span>
+          </div>
+          <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Cleaning history &amp; verification photos</p>
+        </div>
+        <button @click="detailOpen = false" aria-label="Close"
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-gray-400 transition-[transform,background-color] duration-150 hover:bg-gray-100 hover:text-gray-600 active:scale-[0.92] dark:hover:bg-gray-800 dark:hover:text-gray-200">
+          <i class="ph ph-x text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Timeframe selector -->
+      <div class="flex items-center justify-between gap-3 px-6 pt-4">
+        <span class="text-xs font-bold uppercase tracking-wider text-gray-400">Today's Logs</span>
+      </div>
+
+      <!-- History list -->
+      <div class="flex-1 space-y-3 overflow-y-auto px-6 py-4">
+        <template x-for="(h, i) in cleanHistory.filter(h => h.ago < historyDays)" :key="i">
+          <div class="rounded-xl border bg-white p-4 shadow-sm transition-[transform,border-color,box-shadow] duration-150 hover:shadow-md dark:bg-gray-800"
+            :class="h.status === 'Approved' ? 'border-success-200 dark:border-success-900/50' : 'border-error-200 dark:border-error-900/50'">
+            <div class="flex items-center justify-between mb-3 border-b border-gray-100 dark:border-gray-700 pb-3">
+              <div class="flex items-center gap-3">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors"
+                  :class="h.status === 'Approved' ? 'bg-success-50 text-success-600 dark:bg-success-500/10' : 'bg-error-50 text-error-600 dark:bg-error-500/10'">
+                  <i class="ph text-2xl" :class="h.status === 'Approved' ? 'ph-check-circle' : 'ph-x-circle'"></i>
+                </div>
+                <div>
+                  <h4 class="text-md font-extrabold text-gray-900 dark:text-white" x-text="h.date"></h4>
+                  <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 mt-1 block">
+                    <span x-text="h.type"></span>
+                  </span>
+                </div>
+              </div>
+              <span class="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide"
+                :class="h.status === 'Approved' ? 'bg-success-50 text-success-700 dark:bg-success-500/20 dark:text-success-400' : 'bg-error-50 text-error-700 dark:bg-error-500/20 dark:text-error-400'"
+                x-text="h.status"></span>
+            </div>
+
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5"><i class="ph ph-user text-gray-400"></i><span x-text="h.crew"></span></span>
+              <span class="text-xs font-semibold text-gray-400 tabular-nums"><i class="ph ph-clock text-gray-400"></i> <span x-text="h.duration"></span></span>
+            </div>
+
+            <div class="mt-2 flex flex-wrap gap-2" x-show="h.photos.length">
+              <template x-for="img in h.photos" :key="img">
+                <img :src="img" alt="Cleaning verification photo" loading="lazy"
+                  class="h-14 w-14 cursor-zoom-in rounded-lg object-cover outline outline-1 -outline-offset-1 outline-black/10 transition-transform duration-150 hover:scale-105 dark:outline-white/10" />
+              </template>
+            </div>
+            <p class="mt-2 text-[10px] uppercase font-bold text-gray-400" x-show="!h.photos.length">No photos uploaded</p>
+          </div>
+        </template>
+        <p class="py-8 text-center text-sm text-gray-400" x-show="cleanHistory.filter(h => h.ago < historyDays).length === 0">No cleans recorded in this timeframe.</p>
+      </div>
+
+      <!-- Footer action -->
+      <div class="border-t border-gray-100 p-4 dark:border-gray-800">
+        <button @click="startSelectedClean()"
+          class="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 py-3.5 text-base font-bold text-white shadow-sm transition-[transform,background-color] duration-150 hover:bg-brand-600 active:scale-[0.97]">
+          <i class="ph ph-broom text-xl"></i> Start Cleaning
+        </button>
+      </div>
+    </div>
+  </div>
+
   <svg style="visibility: hidden; position: absolute;" width="0" height="0" xmlns="http://www.w3.org/2000/svg" version="1.1">
     <defs>
       <filter id="goo" x="-50%" y="-50%" width="200%" height="300%">

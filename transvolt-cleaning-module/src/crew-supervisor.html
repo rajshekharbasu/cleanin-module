@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+    content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>
+    Crew Supervisor Overview | TransVolt
+  </title>
+  <!-- Phosphor Icons for large, accessible iconography -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    /* Ensure file inputs are fully hidden but functional via labels */
+    input[type="file"] {
+      display: none;
+    }
+  </style>
+</head>
+
+<body x-data="{ 
+      page: 'crew-supervisor', 
+      activeTab: 'reworks',
+      loaded: true, 
+      darkMode: false, 
+      stickyMenu: false, 
+      sidebarToggle: false, 
+      scrollTop: false,
+      
+      // Dynamic reworks list
+      reworks: [],
+      loadReworks() {
+        let stored = localStorage.getItem('reworks_tickets');
+        if (stored) {
+          this.reworks = JSON.parse(stored);
+        } else {
+          this.reworks = [
+            { id: 1, ref: 'Bus #821', type: 'Deep Clean', location: 'Bay 12', reason: 'Trash remaining in rear aisle', amount: 500, fineAccepted: false, retried: false, retryCount: 0, photo: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600' },
+            { id: 2, ref: 'Service Bay 2', type: 'Depot Cleaning', location: 'Maintenance Area', reason: 'Oil spillages not fully absorbed', amount: 165, fineAccepted: false, retried: false, retryCount: 0, photo: 'https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600' }
+          ];
+          localStorage.setItem('reworks_tickets', JSON.stringify(this.reworks));
+        }
+      },
+      saveReworks() {
+        localStorage.setItem('reworks_tickets', JSON.stringify(this.reworks));
+      },
+      
+      // Mock data for cleaning history
+      history: [
+        { ref: 'Bus #402', type: 'Quick Clean', operator: 'Rajesh Kumar', time: '10:15 AM', duration: '8 mins', status: 'Approved', photos: ['https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600'] },
+        { ref: 'Bus #781', type: 'Overnight Clean', operator: 'Suresh Patil', time: '09:40 AM', duration: '45 mins', status: 'Approved', photos: ['https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600'] },
+        { ref: 'Bus #905', type: 'Deep Clean', operator: 'Amit Singh', time: '08:10 AM', duration: '120 mins', status: 'Approved', photos: ['https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600'] },
+        { ref: 'Washing Pit 1', type: 'Depot Cleaning', operator: 'Vikram Rao', time: '07:30 AM', duration: '60 mins', status: 'Approved', photos: ['https://images.unsplash.com/photo-1570125909232-eb263c188f7e?w=600'] },
+        { ref: 'Bus #301', type: 'Quick Clean', operator: 'Rajesh Kumar', time: '06:45 AM', duration: '10 mins', status: 'Approved', photos: ['https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600'] }
+      ],
+      
+      searchQuery: '',
+      statusFilter: 'All',
+      reworkFilter: 'All',
+      
+      activePhoto: null,
+      photoModalOpen: false,
+      
+      acceptFine(item) {
+        item.fineAccepted = true;
+        alert(`Fine for ${item.ref} (INR ${item.amount}) Accepted and processed for deduction.`);
+        this.saveReworks();
+        setTimeout(() => {
+          this.reworks = this.reworks.filter(r => r.id !== item.id);
+          this.saveReworks();
+        }, 800);
+      },
+      
+      retryCleaning(item) {
+        if (item.retryCount >= 2) {
+          alert('Maximum retry attempts reached! Depot Manager intervention required.');
+          return;
+        }
+        item.retryCount = (item.retryCount || 0) + 1;
+        
+        if (item.retryCount >= 2) {
+          item.flagged = true;
+          item.retried = true;
+          alert(`Rework task assigned for ${item.ref}. Warning: Retry limit reached. Flagged for Depot Manager intervention!`);
+        } else {
+          alert(`Rework task assigned for ${item.ref} (Attempt #${item.retryCount}). Added back to Crew Queue.`);
+          item.retried = true;
+        }
+        this.saveReworks();
+      },
+      
+      viewPhotos(photos) {
+        if (photos && photos.length > 0) {
+          this.activePhoto = photos[0];
+          this.photoModalOpen = true;
+        }
+      }
+    }" x-init="
+         loadReworks();
+         darkMode = JSON.parse(localStorage.getItem('darkMode'));
+         $watch('darkMode', value => localStorage.setItem('darkMode', JSON.stringify(value)))"
+  :class="{'dark bg-gray-900': darkMode === true}">
+  <!-- ===== Preloader Start ===== -->
+  <include src="./partials/preloader.html"></include>
+  <!-- ===== Preloader End ===== -->
+
+  <!-- ===== Page Wrapper Start ===== -->
+  <div class="flex h-screen overflow-hidden">
+    <!-- ===== Sidebar Start ===== -->
+    <include src="./partials/sidebar.html"></include>
+    <!-- ===== Sidebar End ===== -->
+
+    <!-- ===== Content Area Start ===== -->
+    <div class="relative flex flex-col flex-1 overflow-x-hidden overflow-y-auto">
+      <!-- Small Device Overlay Start -->
+      <include src="./partials/overlay.html" />
+      <!-- Small Device Overlay End -->
+
+      <!-- ===== Header Start ===== -->
+      <include src="./partials/header.html" />
+      <!-- ===== Header End ===== -->
+
+      <!-- ===== Main Content Start ===== -->
+      <main>
+        <div class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+
+          <!-- Dashboard Header -->
+          <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 class="text-title-md2 font-bold text-gray-800 dark:text-white/90">Crew Supervisor Control Center</h2>
+              <p class="text-base text-gray-500 dark:text-gray-400 mt-1">Manage vendor-side activities, crew performance, reworks, and SLA fines.</p>
+            </div>
+          </div>
+
+          <div class="mb-6 border-b border-gray-200 dark:border-gray-700">
+            <nav class="-mb-px flex gap-6" aria-label="Tabs">
+              <button @click="activeTab = 'reworks'"
+                class="inline-flex shrink-0 items-center gap-2 border-b-2 px-1 pb-4 text-sm font-medium transition-colors"
+                :class="activeTab === 'reworks' ? 'border-brand-500 text-brand-600 dark:text-brand-500' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'">
+                <i class="ph ph-warning-circle text-lg"></i> Active Reworks
+              </button>
+              <button @click="activeTab = 'history'"
+                class="inline-flex shrink-0 items-center gap-2 border-b-2 px-1 pb-4 text-sm font-medium transition-colors"
+                :class="activeTab === 'history' ? 'border-brand-500 text-brand-600 dark:text-brand-500' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'">
+                <i class="ph ph-clock-counter-clockwise text-lg"></i> Cleaning History
+              </button>
+            </nav>
+          </div>
+
+          <div x-show="activeTab === 'reworks'">
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 mb-8">
+            <!-- Stat 1 -->
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 shadow-sm flex flex-col justify-center">
+              <div class="flex items-center gap-4">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-500">
+                  <i class="ph ph-check-square-offset text-2xl"></i>
+                </div>
+                <div>
+                  <h4 class="text-title-sm font-bold text-gray-800 dark:text-white/90">18 / 24</h4>
+                  <span class="text-sm text-gray-500 dark:text-gray-400">Tasks Completed Today</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Stat 2 -->
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900 shadow-sm flex flex-col justify-center">
+              <div class="flex items-center gap-4">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-500">
+                  <i class="ph ph-users-three text-2xl"></i>
+                </div>
+                <div>
+                  <h4 class="text-title-sm font-bold text-gray-800 dark:text-white/90">12 Operators</h4>
+                  <span class="text-sm text-gray-500 dark:text-gray-400">Active On-Duty Crew</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stat 3 -->
+            <div class="rounded-2xl border border-error-200 bg-error-50/50 p-5 dark:border-error-950 dark:bg-error-500/10 shadow-sm flex flex-col justify-center">
+              <div class="flex items-center gap-4">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-error-100 text-error-600 dark:bg-error-500/20 dark:text-error-500">
+                  <i class="ph ph-warning-circle text-2xl"></i>
+                </div>
+                <div>
+                  <h4 class="text-title-sm font-bold text-error-750 dark:text-error-450" x-text="`${reworks.length} Pending`">2 Pending</h4>
+                  <span class="text-sm text-error-700 dark:text-error-400">Active Rework Tickets</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stat 4 -->
+            <div class="rounded-2xl border border-warning-200 bg-warning-50 p-5 dark:border-warning-900/50 dark:bg-warning-500/10 shadow-sm flex flex-col justify-center">
+              <div class="flex items-center gap-4">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-warning-100 text-warning-600 dark:bg-warning-500/20 dark:text-warning-500">
+                  <i class="ph ph-currency-inr text-2xl"></i>
+                </div>
+                <div>
+                  <h4 class="text-title-sm font-bold text-warning-800 dark:text-warning-400">INR 665</h4>
+                  <span class="text-sm text-warning-700 dark:text-warning-500">Unresolved Fines</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+            <!-- Rework & Fine Actions Section -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
+              <h3 class="text-title-sm font-bold text-gray-800 dark:text-white/90 flex items-center gap-2">
+                <i class="ph ph-clock-counter-clockwise text-xl text-error-500"></i> Active Rejections & Reworks
+              </h3>
+              
+              <!-- Animated Pill Filter -->
+              <div class="overflow-x-auto no-scrollbar pb-2">
+                <div class="relative flex items-center h-10 md:h-12 w-max rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm px-1">
+                  <!-- Gooey Background Layer -->
+                  <div class="absolute inset-0 pointer-events-none rounded-full overflow-hidden" style="filter: url('#goo');">
+                    <div class="absolute top-1 bottom-1 bg-brand-500 rounded-full transition-all duration-[600ms] z-0"
+                      style="transition-timing-function: cubic-bezier(0.68, -0.2, 0.26, 1.3);"
+                      :class="{
+                        'w-[40px] translate-x-[4px] md:w-[50px] md:translate-x-[4px]': reworkFilter === 'All',
+                        'w-[86px] translate-x-[48px] md:w-[104px] md:translate-x-[58px]': reworkFilter === 'Quick Clean',
+                        'w-[110px] translate-x-[138px] md:w-[134px] md:translate-x-[166px]': reworkFilter === 'Overnight Clean',
+                        'w-[80px] translate-x-[252px] md:w-[100px] md:translate-x-[304px]': reworkFilter === 'Deep Clean',
+                        'w-[96px] translate-x-[336px] md:w-[110px] md:translate-x-[408px]': reworkFilter === 'Depot Cleaning'
+                      }">
+                    </div>
+                  </div>
+
+                  <!-- Foreground Interactive Buttons -->
+                  <div class="relative flex items-center h-full z-10 text-[11px] md:text-sm">
+                    <button @click="reworkFilter = 'All'"
+                      class="w-[40px] md:w-[50px] h-full rounded-full font-bold transition-colors duration-300"
+                      :class="reworkFilter === 'All' ? 'text-white' : 'text-gray-600 dark:text-gray-300 hover:text-brand-500 dark:hover:text-brand-400'">All</button>
+                    <button @click="reworkFilter = 'Quick Clean'"
+                      class="w-[86px] md:w-[104px] h-full rounded-full font-bold transition-colors duration-300 ml-1"
+                      :class="reworkFilter === 'Quick Clean' ? 'text-white' : 'text-gray-600 dark:text-gray-300 hover:text-brand-500 dark:hover:text-brand-400'">Quick Clean</button>
+                    <button @click="reworkFilter = 'Overnight Clean'"
+                      class="w-[110px] md:w-[134px] h-full rounded-full font-bold transition-colors duration-300 ml-1"
+                      :class="reworkFilter === 'Overnight Clean' ? 'text-white' : 'text-gray-600 dark:text-gray-300 hover:text-brand-500 dark:hover:text-brand-400'">Overnight Clean</button>
+                    <button @click="reworkFilter = 'Deep Clean'"
+                      class="w-[80px] md:w-[100px] h-full rounded-full font-bold transition-colors duration-300 ml-1"
+                      :class="reworkFilter === 'Deep Clean' ? 'text-white' : 'text-gray-600 dark:text-gray-300 hover:text-brand-500 dark:hover:text-brand-400'">Deep Clean</button>
+                    <button @click="reworkFilter = 'Depot Cleaning'"
+                      class="w-[96px] md:w-[110px] h-full rounded-full font-bold transition-colors duration-300 ml-1"
+                      :class="reworkFilter === 'Depot Cleaning' ? 'text-white' : 'text-gray-600 dark:text-gray-300 hover:text-brand-500 dark:hover:text-brand-400'">Depot Clean</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <!-- Rework Loop -->
+              <template x-for="item in reworks.filter(r => reworkFilter === 'All' || r.type === reworkFilter)" :key="item.id">
+                <div class="rounded-xl border bg-white p-5 shadow-sm dark:bg-gray-900 transition-all duration-300"
+                  :class="item.fineAccepted || item.retried ? (item.flagged ? 'border-amber-500 bg-amber-50/15' : 'border-success-500 bg-success-50/20 dark:border-success-700 dark:bg-success-900/10 opacity-70 scale-95') : 'border-error-200 dark:border-error-800'">
+                  
+                  <!-- Intervention Badge -->
+                  <template x-if="item.flagged">
+                    <div class="mb-4 rounded-xl bg-error-50 dark:bg-error-500/10 p-3 border border-error-200 dark:border-error-500/20 text-center flex items-center justify-center gap-1.5 text-error-750 dark:text-error-450 font-bold text-xs">
+                      <i class="ph ph-shield-warning text-lg"></i>
+                      Depot Manager Intervention Flagged!
+                    </div>
+                  </template>
+
+                  <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-4">
+                      <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-error-50 text-error-600 dark:bg-error-500/10 dark:text-error-450">
+                        <i class="ph ph-warning-circle text-3xl"></i>
+                      </div>
+                      <div>
+                        <h4 class="text-lg font-extrabold text-gray-800 dark:text-white" x-text="item.ref"></h4>
+                        <span class="text-sm font-semibold text-gray-500 dark:text-gray-400 mt-1.5 block" x-text="`${item.type} • ${item.location}`"></span>
+                      </div>
+                    </div>
+                    
+                    <span class="rounded-full bg-error-100 text-error-700 dark:bg-error-500/20 dark:text-error-400 px-2.5 py-1 text-xs font-bold uppercase tracking-wide"
+                      x-text="`INR ${item.amount}`"></span>
+                  </div>
+
+                  <div class="mb-4 rounded-xl bg-gray-50 dark:bg-gray-850 p-4 border border-gray-100 dark:border-gray-800">
+                    <span class="text-xs font-bold text-error-600 dark:text-error-400 block mb-1">Audit Failure Reason:</span>
+                    <p class="text-sm text-gray-700 dark:text-gray-300" x-text="item.reason"></p>
+                  </div>
+
+                  <div class="mb-4 text-xs font-semibold text-gray-500 dark:text-gray-400 flex items-center justify-between">
+                    <span>Retry Attempts: <strong class="text-gray-850 dark:text-white" x-text="item.retryCount || 0"></strong> / 2</span>
+                    <template x-if="item.photo">
+                      <button @click="viewPhotos([item.photo])" class="text-brand-500 font-bold hover:underline flex items-center gap-1 cursor-pointer">
+                        <i class="ph ph-image text-sm"></i> View Fine Photo
+                      </button>
+                    </template>
+                  </div>
+
+                  <div class="flex gap-3">
+                    <button @click="acceptFine(item)" :disabled="item.fineAccepted || (item.retried && !item.flagged)"
+                      class="flex-1 rounded-xl border-2 border-error-200 bg-white py-2.5 text-sm font-bold text-error-600 hover:bg-error-50 transition-colors dark:bg-gray-800 dark:border-error-700 dark:hover:bg-gray-750 disabled:opacity-50 cursor-pointer">
+                      Accept Fine
+                    </button>
+                    <button @click="retryCleaning(item)" :disabled="item.fineAccepted || item.retried || item.retryCount >= 2"
+                      class="flex-1 rounded-xl bg-brand-500 py-2.5 text-sm font-bold text-white hover:bg-brand-600 transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer">
+                      <i class="ph ph-paper-plane-tilt"></i> Send to Crew
+                    </button>
+                  </div>
+                </div>
+              </template>
+              
+              <!-- Empty State -->
+              <div x-show="reworks.length === 0" class="col-span-1 md:col-span-2 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50 p-8 text-center">
+                <i class="ph ph-check-circle text-4xl text-success-500 block mb-2"></i>
+                <p class="text-sm font-semibold text-gray-600 dark:text-gray-400">All quality checks cleared! No pending reworks or rejections.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- History Logs Section -->
+          <div x-show="activeTab === 'history'" style="display: none;">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
+              <!-- Animated Pill Filter -->
+              <div class="overflow-x-auto no-scrollbar pb-2">
+                <div class="relative flex items-center h-10 md:h-12 w-max rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm px-1">
+                  <!-- Gooey Background Layer -->
+                  <div class="absolute inset-0 pointer-events-none rounded-full overflow-hidden" style="filter: url('#goo');">
+                    <div class="absolute top-1 bottom-1 bg-brand-500 rounded-full transition-all duration-[600ms] z-0"
+                      style="transition-timing-function: cubic-bezier(0.68, -0.2, 0.26, 1.3);"
+                      :class="{
+                        'w-[40px] translate-x-[4px] md:w-[50px] md:translate-x-[4px]': statusFilter === 'All',
+                        'w-[86px] translate-x-[48px] md:w-[104px] md:translate-x-[58px]': statusFilter === 'Quick Clean',
+                        'w-[110px] translate-x-[138px] md:w-[134px] md:translate-x-[166px]': statusFilter === 'Overnight Clean',
+                        'w-[80px] translate-x-[252px] md:w-[100px] md:translate-x-[304px]': statusFilter === 'Deep Clean',
+                        'w-[96px] translate-x-[336px] md:w-[110px] md:translate-x-[408px]': statusFilter === 'Depot Cleaning'
+                      }">
+                    </div>
+                  </div>
+
+                  <!-- Foreground Interactive Buttons -->
+                  <div class="relative flex items-center h-full z-10 text-[11px] md:text-sm">
+                    <button @click="statusFilter = 'All'"
+                      class="w-[40px] md:w-[50px] h-full rounded-full font-bold transition-colors duration-300"
+                      :class="statusFilter === 'All' ? 'text-white' : 'text-gray-600 dark:text-gray-300 hover:text-brand-500 dark:hover:text-brand-400'">All</button>
+                    <button @click="statusFilter = 'Quick Clean'"
+                      class="w-[86px] md:w-[104px] h-full rounded-full font-bold transition-colors duration-300 ml-1"
+                      :class="statusFilter === 'Quick Clean' ? 'text-white' : 'text-gray-600 dark:text-gray-300 hover:text-brand-500 dark:hover:text-brand-400'">Quick Clean</button>
+                    <button @click="statusFilter = 'Overnight Clean'"
+                      class="w-[110px] md:w-[134px] h-full rounded-full font-bold transition-colors duration-300 ml-1"
+                      :class="statusFilter === 'Overnight Clean' ? 'text-white' : 'text-gray-600 dark:text-gray-300 hover:text-brand-500 dark:hover:text-brand-400'">Overnight Clean</button>
+                    <button @click="statusFilter = 'Deep Clean'"
+                      class="w-[80px] md:w-[100px] h-full rounded-full font-bold transition-colors duration-300 ml-1"
+                      :class="statusFilter === 'Deep Clean' ? 'text-white' : 'text-gray-600 dark:text-gray-300 hover:text-brand-500 dark:hover:text-brand-400'">Deep Clean</button>
+                    <button @click="statusFilter = 'Depot Cleaning'"
+                      class="w-[96px] md:w-[110px] h-full rounded-full font-bold transition-colors duration-300 ml-1"
+                      :class="statusFilter === 'Depot Cleaning' ? 'text-white' : 'text-gray-600 dark:text-gray-300 hover:text-brand-500 dark:hover:text-brand-400'">Depot Clean</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 overflow-hidden">
+              <div class="border-b border-gray-200 p-5 dark:border-gray-800 sm:flex sm:items-center sm:justify-between gap-4">
+                <div>
+                  <h3 class="text-lg font-bold text-gray-800 dark:text-white/90">Crew Cleaning History</h3>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Review completed tasks, durations, and reference photos.</p>
+                </div>
+                <div class="relative w-full sm:w-64 mt-4 sm:mt-0">
+                  <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                    <i class="ph ph-magnifying-glass text-gray-400"></i>
+                  </div>
+                  <input type="text" x-model="searchQuery" class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2 pl-9 text-xs text-gray-900 focus:border-brand-500 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white" placeholder="Search ref or operator...">
+                </div>
+              </div>
+
+            <!-- Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 p-6">
+              <template x-for="log in history.filter(h => (statusFilter === 'All' || h.type === statusFilter) && (searchQuery === '' || h.ref.toLowerCase().includes(searchQuery.toLowerCase()) || h.operator.toLowerCase().includes(searchQuery.toLowerCase())))" :key="log.ref + log.time">
+                <div class="rounded-xl border bg-white p-5 shadow-sm transition-[transform,border-color,box-shadow] duration-150 hover:shadow-md dark:bg-gray-800"
+                  :class="log.status === 'Approved' ? 'border-success-200 dark:border-success-900/50' : 'border-error-200 dark:border-error-900/50'">
+                  
+                  <div class="flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-4">
+                      <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl transition-colors"
+                        :class="log.status === 'Approved' ? 'bg-success-50 text-success-600 dark:bg-success-500/10' : 'bg-error-50 text-error-600 dark:bg-error-500/10'">
+                        <i class="ph text-3xl" :class="log.status === 'Approved' ? 'ph-check-circle' : 'ph-warning-circle'"></i>
+                      </div>
+                      <div>
+                        <div class="flex items-center gap-2">
+                          <h4 class="text-lg font-extrabold text-gray-900 dark:text-white" x-text="log.ref"></h4>
+                          <span class="rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide"
+                            :class="log.status === 'Approved' ? 'bg-success-50 text-success-700 dark:bg-success-500/10 dark:text-success-400' : 'bg-error-50 text-error-700 dark:bg-error-500/10 dark:text-error-400'"
+                            x-text="log.status">
+                          </span>
+                        </div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1.5" x-text="log.type + ' • By ' + log.operator"></p>
+                      </div>
+                    </div>
+                    <div class="shrink-0 text-right">
+                      <span class="flex items-center justify-end gap-1.5 text-base font-bold text-gray-700 dark:text-gray-300">
+                        <i class="ph ph-timer text-gray-500 dark:text-gray-400"></i> <span class="tabular-nums" x-text="log.duration"></span>
+                      </span>
+                      <button type="button" @click="viewPhotos(log.photos)" class="mt-1.5 flex w-full items-center justify-end gap-1 text-[10px] font-bold uppercase tracking-widest text-gray-400 hover:text-brand-500 transition-colors">
+                        <i class="ph ph-image text-brand-500 text-sm"></i> <span x-text="log.photos ? log.photos.length + (log.photos.length === 1 ? ' PHOTO' : ' PHOTOS') : '0 PHOTOS'"></span>
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+              </template>
+              
+              <!-- Empty State -->
+              <div x-show="history.filter(h => (statusFilter === 'All' || h.type === statusFilter) && (searchQuery === '' || h.ref.toLowerCase().includes(searchQuery.toLowerCase()) || h.operator.toLowerCase().includes(searchQuery.toLowerCase()))).length === 0"
+                class="col-span-full py-12 text-center">
+                <i class="ph ph-folder-open text-4xl text-gray-300 dark:text-gray-700 block mb-2"></i>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">No cleaning history matches your search.</p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+      <!-- ===== Main Content End ===== -->
+    </div>
+    <!-- ===== Content Area End ===== -->
+  </div>
+  <!-- ===== Page Wrapper End ===== -->
+
+  <!-- Photo Proof Modal -->
+  <div x-show="photoModalOpen"
+    class="fixed inset-0 z-[999999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+    style="display: none;">
+    <div @click.outside="photoModalOpen = false"
+      class="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl dark:bg-gray-900 md:p-8">
+      <div class="mb-4 flex items-center justify-between">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <i class="ph ph-camera text-xl text-brand-500"></i> Consolidated Verification Photo
+        </h3>
+        <button @click="photoModalOpen = false" class="text-gray-400 hover:text-gray-650">
+          <i class="ph ph-x text-2xl"></i>
+        </button>
+      </div>
+      <div class="rounded-2xl overflow-hidden bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+        <img :src="activePhoto" class="w-full h-auto object-cover max-h-[360px]" alt="Verification Proof">
+      </div>
+      
+      <div class="mt-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-150 dark:border-gray-700">
+        <p class="text-xs font-semibold text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+          <i class="ph ph-shield-check text-success-500 text-lg"></i>
+          Captured matching the <strong>Optimal Ground Angle Reference</strong>. Checked by QA.
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
