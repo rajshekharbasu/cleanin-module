@@ -171,18 +171,16 @@
                     </span>
                   </div>
                   
-                  <div class="shrink-0">
+                  <div class="shrink-0 flex items-center gap-2">
                     <template x-if="v.type === 'Quick Clean'">
                       <div class="inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 transition-colors group-hover:bg-brand-100 dark:group-hover:bg-brand-500/20">
                         <i class="ph ph-clock-counter-clockwise text-sm"></i> History
                       </div>
                     </template>
-                    <template x-if="v.type !== 'Quick Clean'">
-                      <div class="inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white transition-all shadow-xs group-hover:scale-[1.02] active:scale-[0.98]"
-                        :class="v.type === 'Deep Clean' ? 'bg-purple-500 group-hover:bg-purple-600' : 'bg-warning-500 group-hover:bg-warning-600'">
-                        <i class="ph-fill ph-play-circle text-xs"></i> Start Clean
-                      </div>
-                    </template>
+                    <div class="inline-flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white transition-all shadow-xs group-hover:scale-[1.02] active:scale-[0.98]"
+                      :class="v.type === 'Deep Clean' ? 'bg-purple-500 group-hover:bg-purple-600' : (v.type === 'Quick Clean' ? 'bg-brand-500 group-hover:bg-brand-600' : 'bg-warning-500 group-hover:bg-warning-600')">
+                      <i class="ph-fill ph-play-circle text-xs"></i> Start Clean
+                    </div>
                   </div>
                 </div>
               </button>
@@ -190,7 +188,20 @@
           </div>
 
           <!-- Checklist View -->
-          <div x-show="view === 'checklist'" style="display: none;" class="space-y-6">
+          <div x-show="view === 'checklist'" style="display: none;" class="space-y-6"
+            x-data="{ 
+              photoGuideOpen: false, 
+              guideType: '',
+              photos: { interior: null, exterior: null },
+              uploadPhoto(e, type) {
+                if(!e.target.files.length) return;
+                let reader = new FileReader();
+                reader.onload = (event) => {
+                  this.photos[type] = event.target.result;
+                };
+                reader.readAsDataURL(e.target.files[0]);
+              }
+            }">
 
             <!-- Header -->
             <div class="z-50 -mx-4 mt-2 mb-6 bg-white px-4 py-4 dark:bg-gray-900 md:-mx-6 md:-mt-2 md:px-6">
@@ -345,6 +356,34 @@
               </div>
             </div>
 
+            <!-- Interior Photo Upload -->
+            <div class="mt-6 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900 shadow-sm">
+              <div class="flex items-center justify-between mb-4 pb-2">
+                <div>
+                  <h3 class="text-lg font-bold text-gray-850 dark:text-white">Interior Photo</h3>
+                  <p class="text-xs text-gray-500 dark:text-gray-455 mt-1">Upload a wide-angle photo to satisfy SLA contract verification guidelines.</p>
+                </div>
+                <button @click="photoGuideOpen = true; guideType = 'interior'" class="text-xs text-brand-500 font-bold hover:underline shrink-0">
+                  <i class="ph ph-info mr-0.5"></i> Camera Guide
+                </button>
+              </div>
+              <label class="flex h-36 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-750 transition-all overflow-hidden relative">
+                <input type="file" class="hidden" accept="image/*" capture="environment" @change="uploadPhoto($event, 'interior')" />
+                <template x-if="!photos.interior">
+                  <div class="text-center">
+                    <i class="ph ph-camera text-3xl text-gray-455"></i>
+                    <span class="block text-xs font-bold text-gray-600 dark:text-gray-400 mt-1">Take Interior Photo</span>
+                  </div>
+                </template>
+                <template x-if="photos.interior">
+                  <div class="h-full w-full">
+                    <img :src="photos.interior" class="h-full w-full object-cover" />
+                    <button @click.prevent="photos.interior = null" class="absolute top-2 right-2 flex items-center justify-center bg-black/60 text-white rounded-full h-8 w-8 hover:bg-error-500 transition-colors z-10"><i class="ph ph-trash text-sm"></i></button>
+                  </div>
+                </template>
+              </label>
+            </div>
+
             <!-- Exterior Phase -->
             <div class="mt-8">
               <h3 class="mb-4 text-xl font-bold text-gray-800 dark:text-white/90 uppercase tracking-wide">3. Exterior</h3>
@@ -399,82 +438,33 @@
                   </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Consolidated Photo Verification Section -->
-            <div class="mt-8 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900 shadow-sm"
-              x-data="{ 
-                photoGuideOpen: false, 
-                guideType: '',
-                photos: { interior: null, exterior: null },
-                uploadPhoto(e, type) {
-                  if(!e.target.files.length) return;
-                  let reader = new FileReader();
-                  reader.onload = (event) => {
-                    this.photos[type] = event.target.result;
-                  };
-                  reader.readAsDataURL(e.target.files[0]);
-                }
-              }">
-              <div class="flex items-center justify-between mb-4 border-b border-gray-150 dark:border-gray-800 pb-4">
-                <div>
-                  <h3 class="text-xl font-bold text-gray-850 dark:text-white">4. Quality Proof (Optimal Angles)</h3>
-                  <p class="text-xs text-gray-500 dark:text-gray-450 mt-1">Upload exactly two wide-angle photos to satisfy SLA contract verification guidelines.</p>
-                </div>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <!-- Slot 1: Interior -->
-                <div class="flex flex-col gap-3 rounded-xl border border-gray-150 dark:border-gray-800 p-4">
-                  <div class="flex items-center justify-between">
-                    <span class="text-sm font-bold text-gray-700 dark:text-gray-300">Interior (Rear-to-Front)</span>
-                    <button @click="photoGuideOpen = true; guideType = 'interior'" class="text-xs text-brand-500 font-bold hover:underline">
-                      <i class="ph ph-info mr-0.5"></i> Camera Guide
-                    </button>
+              <!-- Exterior Photo Upload -->
+              <div class="mt-6 rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900 shadow-sm">
+                <div class="flex items-center justify-between mb-4 pb-2">
+                  <div>
+                    <h3 class="text-lg font-bold text-gray-850 dark:text-white">Exterior Photo</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-455 mt-1">Upload a wide-angle photo to satisfy SLA contract verification guidelines.</p>
                   </div>
-                  
-                  <label class="flex h-36 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-750 transition-all overflow-hidden relative">
-                    <input type="file" class="hidden" accept="image/*" capture="environment" @change="uploadPhoto($event, 'interior')" />
-                    <template x-if="!photos.interior">
-                      <div class="text-center">
-                        <i class="ph ph-camera text-3xl text-gray-450"></i>
-                        <span class="block text-xs font-bold text-gray-600 dark:text-gray-400 mt-1">Take Interior Photo</span>
-                      </div>
-                    </template>
-                    <template x-if="photos.interior">
-                      <div class="h-full w-full">
-                        <img :src="photos.interior" class="h-full w-full object-cover" />
-                        <button @click.prevent="photos.interior = null" class="absolute top-2 right-2 flex items-center justify-center bg-black/60 text-white rounded-full h-8 w-8 hover:bg-error-500 transition-colors z-10"><i class="ph ph-trash text-sm"></i></button>
-                      </div>
-                    </template>
-                  </label>
+                  <button @click="photoGuideOpen = true; guideType = 'exterior'" class="text-xs text-brand-500 font-bold hover:underline shrink-0">
+                    <i class="ph ph-info mr-0.5"></i> Camera Guide
+                  </button>
                 </div>
-
-                <!-- Slot 2: Exterior -->
-                <div class="flex flex-col gap-3 rounded-xl border border-gray-150 dark:border-gray-800 p-4">
-                  <div class="flex items-center justify-between">
-                    <span class="text-sm font-bold text-gray-700 dark:text-gray-300">Exterior (Side Ground Check)</span>
-                    <button @click="photoGuideOpen = true; guideType = 'exterior'" class="text-xs text-brand-500 font-bold hover:underline">
-                      <i class="ph ph-info mr-0.5"></i> Camera Guide
-                    </button>
-                  </div>
-                  
-                  <label class="flex h-36 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-750 transition-all overflow-hidden relative">
-                    <input type="file" class="hidden" accept="image/*" capture="environment" @change="uploadPhoto($event, 'exterior')" />
-                    <template x-if="!photos.exterior">
-                      <div class="text-center">
-                        <i class="ph ph-camera text-3xl text-gray-450"></i>
-                        <span class="block text-xs font-bold text-gray-600 dark:text-gray-400 mt-1">Take Exterior Photo</span>
-                      </div>
-                    </template>
-                    <template x-if="photos.exterior">
-                      <div class="h-full w-full">
-                        <img :src="photos.exterior" class="h-full w-full object-cover" />
-                        <button @click.prevent="photos.exterior = null" class="absolute top-2 right-2 flex items-center justify-center bg-black/60 text-white rounded-full h-8 w-8 hover:bg-error-500 transition-colors z-10"><i class="ph ph-trash text-sm"></i></button>
-                      </div>
-                    </template>
-                  </label>
-                </div>
+                <label class="flex h-36 w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-750 transition-all overflow-hidden relative">
+                  <input type="file" class="hidden" accept="image/*" capture="environment" @change="uploadPhoto($event, 'exterior')" />
+                  <template x-if="!photos.exterior">
+                    <div class="text-center">
+                      <i class="ph ph-camera text-3xl text-gray-455"></i>
+                      <span class="block text-xs font-bold text-gray-600 dark:text-gray-400 mt-1">Take Exterior Photo</span>
+                    </div>
+                  </template>
+                  <template x-if="photos.exterior">
+                    <div class="h-full w-full">
+                      <img :src="photos.exterior" class="h-full w-full object-cover" />
+                      <button @click.prevent="photos.exterior = null" class="absolute top-2 right-2 flex items-center justify-center bg-black/60 text-white rounded-full h-8 w-8 hover:bg-error-500 transition-colors z-10"><i class="ph ph-trash text-sm"></i></button>
+                    </div>
+                  </template>
+                </label>
               </div>
 
               <!-- Camera Angle Guide Modal -->

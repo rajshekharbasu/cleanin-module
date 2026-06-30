@@ -57,6 +57,7 @@
       
       searchQuery: '',
       statusFilter: 'All',
+      historyCategory: 'Vehicle Cleaning',
       reworkFilter: 'All',
       
       activePhoto: null,
@@ -319,9 +320,19 @@
           <!-- History Logs Section -->
           <div x-show="activeTab === 'history'" style="display: none;">
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
-              <!-- Animated Pill Filter -->
-              <div class="overflow-x-auto no-scrollbar pb-2">
-                <div class="relative flex items-center h-10 md:h-12 w-max rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm px-1">
+              <!-- Filters container -->
+              <div class="flex flex-col gap-3 sm:flex-row sm:items-center overflow-x-auto no-scrollbar pb-2">
+                <!-- Category Dropdown -->
+                <div class="relative shrink-0">
+                  <select x-model="historyCategory" class="h-10 md:h-12 appearance-none rounded-xl border border-gray-200 bg-white px-4 pr-10 text-sm font-bold text-gray-700 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                    <option value="Vehicle Cleaning">Vehicle Cleaning</option>
+                    <option value="Depot Cleaning">Depot Cleaning</option>
+                  </select>
+                  <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"></i>
+                </div>
+
+                <!-- Animated Pill Filter -->
+                <div x-show="historyCategory === 'Vehicle Cleaning'" x-transition class="relative flex items-center h-10 md:h-12 w-max rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm px-1 shrink-0">
                   <!-- Gooey Background Layer -->
                   <div class="absolute inset-0 pointer-events-none rounded-full overflow-hidden" style="filter: url('#goo');">
                     <div class="absolute top-1 bottom-1 bg-brand-500 rounded-full transition-all duration-[600ms] z-0"
@@ -330,8 +341,7 @@
                         'w-[40px] translate-x-[4px] md:w-[50px] md:translate-x-[4px]': statusFilter === 'All',
                         'w-[86px] translate-x-[48px] md:w-[104px] md:translate-x-[58px]': statusFilter === 'Quick Clean',
                         'w-[110px] translate-x-[138px] md:w-[134px] md:translate-x-[166px]': statusFilter === 'Overnight Clean',
-                        'w-[80px] translate-x-[252px] md:w-[100px] md:translate-x-[304px]': statusFilter === 'Deep Clean',
-                        'w-[96px] translate-x-[336px] md:w-[110px] md:translate-x-[408px]': statusFilter === 'Depot Cleaning'
+                        'w-[80px] translate-x-[252px] md:w-[100px] md:translate-x-[304px]': statusFilter === 'Deep Clean'
                       }">
                     </div>
                   </div>
@@ -350,9 +360,6 @@
                     <button @click="statusFilter = 'Deep Clean'"
                       class="w-[80px] md:w-[100px] h-full rounded-full font-bold transition-colors duration-300 ml-1"
                       :class="statusFilter === 'Deep Clean' ? 'text-white' : 'text-gray-600 dark:text-gray-300 hover:text-brand-500 dark:hover:text-brand-400'">Deep Clean</button>
-                    <button @click="statusFilter = 'Depot Cleaning'"
-                      class="w-[96px] md:w-[110px] h-full rounded-full font-bold transition-colors duration-300 ml-1"
-                      :class="statusFilter === 'Depot Cleaning' ? 'text-white' : 'text-gray-600 dark:text-gray-300 hover:text-brand-500 dark:hover:text-brand-400'">Depot Clean</button>
                   </div>
                 </div>
               </div>
@@ -374,7 +381,7 @@
 
             <!-- Cards -->
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 p-6">
-              <template x-for="log in history.filter(h => (statusFilter === 'All' || h.type === statusFilter) && (searchQuery === '' || h.ref.toLowerCase().includes(searchQuery.toLowerCase()) || h.operator.toLowerCase().includes(searchQuery.toLowerCase())))" :key="log.ref + log.time">
+              <template x-for="log in history.filter(h => (historyCategory === 'Depot Cleaning' ? h.type === 'Depot Cleaning' : (statusFilter === 'All' ? h.type !== 'Depot Cleaning' : h.type === statusFilter)) && (searchQuery === '' || h.ref.toLowerCase().includes(searchQuery.toLowerCase()) || h.operator.toLowerCase().includes(searchQuery.toLowerCase())))" :key="log.ref + log.time">
                 <div class="group flex flex-col justify-between rounded-xl border bg-white p-5 shadow-sm transition-[transform,border-color,box-shadow] duration-150 hover:shadow-md dark:bg-gray-800"
                   :class="log.status === 'Approved' ? 'border-success-200 dark:border-success-900/50' : 'border-error-200 dark:border-error-900/50'">
                   
@@ -421,7 +428,7 @@
               </template>
               
               <!-- Empty State -->
-              <div x-show="history.filter(h => (statusFilter === 'All' || h.type === statusFilter) && (searchQuery === '' || h.ref.toLowerCase().includes(searchQuery.toLowerCase()) || h.operator.toLowerCase().includes(searchQuery.toLowerCase()))).length === 0"
+              <div x-show="history.filter(h => (historyCategory === 'Depot Cleaning' ? h.type === 'Depot Cleaning' : (statusFilter === 'All' ? h.type !== 'Depot Cleaning' : h.type === statusFilter)) && (searchQuery === '' || h.ref.toLowerCase().includes(searchQuery.toLowerCase()) || h.operator.toLowerCase().includes(searchQuery.toLowerCase()))).length === 0"
                 class="col-span-full py-12 text-center">
                 <i class="ph ph-folder-open text-4xl text-gray-300 dark:text-gray-700 block mb-2"></i>
                 <p class="text-sm font-medium text-gray-500 dark:text-gray-400">No cleaning history matches your search.</p>
